@@ -1,0 +1,20 @@
+server:
+  address: "0.0.0.0:8080"
+log:
+  dir: _log
+  output_stdout: true
+  basename: unittest.log.%Y-%m-%d
+  rotation_interval: 24h
+  rotation_counts: 7
+  format: text
+  level: debug
+database:
+  log: false
+  host: localhost
+  port: 5432
+  dbuser: postgres
+  dbpassword: 1234
+  dbname: db
+api:
+  hello:
+    count: 3

@@ -1,0 +1,35 @@
+version: '3.4'
+services:
+  oracle-server:
+    build:
+      context: .
+    image: oracle-server
+    environment: 
+      - P2PDORACLE_DATABASE_HOST=oracle-db
+    restart: always
+    depends_on:
+      - oracle-db
+    ports:
+      - 8080:8080
+    volumes:
+      - ./test/config:/config
+
+  oracle-db:
+    image: "postgres:12.2"
+    command: | 
+      -c log_statement=all 
+      -c ssl=on
+      -c ssl_cert_file=/certs/db.crt
+      -c ssl_key_file=/certs/db.key   
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=db
+    volumes:
+      - oracle-db-data:/var/lib/postgresql/data/ # persist data even if container shuts down
+      - ./certs/db:/certs
+volumes:
+  oracle-db-data:
