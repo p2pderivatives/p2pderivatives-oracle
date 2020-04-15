@@ -1,0 +1,104 @@
+
+version: 2.1
+orbs:
+  go: circleci/go@1.1.1
+jobs:
+
+  build:
+    docker:
+      - image: circleci/golang:1.14
+    steps:
+      - checkout
+      - go/mod-download-cached
+      - run:
+          name: Build Server
+          command: |
+            make gen-ssl-certs  
+            make oracle
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  tests:
+    docker:
+      - image: circleci/golang:1.14
+        environment:
+          ARTIFACTS: /tmp/artifacts
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Run unit-tests
+          command: |
+            go get -u github.com/jstemmer/go-junit-report
+            mkdir -p $ARTIFACTS && mkdir -p reports
+            go test -coverprofile=coverage.out -v $(go list ./... | grep -v /integration/) > unit_tests.out
+            go tool cover -html=coverage.out -o $ARTIFACTS/coverage.html
+            cat unit_tests.out | go-junit-report > reports/unit_tests.xml
+      - store_artifacts:
+         path: /tmp/artifacts
+         destination: raw-test-output
+      - store_test_results:
+         path: reports
+
+  integration-tests:
+    docker:
+      - image: circleci/golang:1.14
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Setup configuration and volumes
+          command: |
+            docker volume create oracle-config #ensure same name in docker-compose.ci
+            docker volume create db-certs
+            docker volume create reports
+            make gen-ssl-certs
+            docker create \
+              -v oracle-config:/config \
+              -v db-certs:/certs \
+              -v reports:/reports \
+              --name helper alpine:3.4 /bin/true
+            docker cp ./test/config/. helper:/config
+            docker cp ./certs/db/. helper:/certs
+            # adding permissions 
+            docker-compose -f docker-compose.yml -f docker-compose.ci.yml run oracle-db bash -c \
+              "chown postgres:postgres /certs/db.key && chgrp postgres /certs/db.key && chmod 600 /certs/db.key"
+      - run:
+          name: Start docker-compose service
+          command: |
+            docker-compose -f docker-compose.yml -f docker-compose.ci.yml up -d \
+              oracle-server \
+              oracle-db
+      - run:
+          name: Wait for oracle services
+          command: |
+            docker-compose -f docker-compose.yml -f docker-compose.ci.yml run dockerize \
+             -wait tcp://oracle-server:8080
+      - run:
+          name: Run integration tests
+          command: |
+            docker-compose -f docker-compose.yml -f docker-compose.ci.yml run dev sh -c \
+            "go test -v ./test/integration/... \
+              -appname p2pdoracle \
+              -e integration \
+              -abs-config /app/test/config \
+              -oracle-base-url oracle-server:8080 \
+              2>&1 | go-junit-report > /reports/integration_report.xml"
+            docker cp  helper:/reports/. ./reports
+      - store_test_results:
+          path: reports/
+
+workflows:
+  build-test:
+    jobs:
+      - build
+      - tests:
+          requires:
+            - build
+      - integration-tests:
+          requires:
+            - tests

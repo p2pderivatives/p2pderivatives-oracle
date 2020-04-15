@@ -1,0 +1,27 @@
+version: '3.4'
+services:
+  oracle-server:
+    volumes:
+      - oracle-config:/config
+  oracle-db:
+    volumes:
+      - db-certs:/certs
+  dev:
+    build:
+      context: .
+      target: dev
+    volumes: 
+      - reports:/reports
+
+  dockerize:
+    image: jwilder/dockerize
+
+
+volumes:
+  oracle-db-data:
+  oracle-config:
+    external: true
+  db-certs:
+    external: true
+  reports:
+    external: true
