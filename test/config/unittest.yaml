@@ -1,0 +1,35 @@
+
+server:
+  address: "0.0.0.0:8080"
+log:
+  dir: _log
+  output_stdout: true
+  basename: unittest.log.%Y-%m-%d
+  rotation_interval: 24h
+  rotation_counts: 7
+  format: text
+  level: debug
+database:
+  inmemory: true
+  log: false
+  host: sqlite #mandatory fields but ignored when running with inmemory flag
+  port: 5432
+  dbpassword: 1234
+unittest:
+  i: 10
+  s: hoge
+  ss:
+    - hoge
+    - fuga
+  b: true
+  utf8byte: abcde
+  hexbyte: abcd0e
+  invalidhex: invalid
+  dr: 1h10m10s
+  i64: 132904
+  ui8: 8
+  ui32: 32
+  ui64: 64
+  f32: 3.2
+  f64: 6.4
+
