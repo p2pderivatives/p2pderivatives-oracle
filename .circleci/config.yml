@@ -92,6 +92,22 @@ jobs:
       - store_test_results:
           path: reports/
 
+  packaging:
+    docker:
+      - image: docker:stable-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build docker
+          command: | 
+            docker build -t docker.pkg.github.com/cryptogarageinc/p2pderivatives-server/$CIRCLE_BRANCH/server:$CIRCLE_SHA1 .
+      - run:
+          name: Push docker
+          command: | 
+            docker push docker.pkg.github.com/cryptogarageinc/p2pderivatives-server/$CIRCLE_BRANCH/server:$CIRCLE_SHA1
+
 workflows:
   build-test:
     jobs:
@@ -102,3 +118,10 @@ workflows:
       - integration-tests:
           requires:
             - tests
+      - hold:
+          type: approval
+          requires:
+           - integration-tests
+      - packaging:
+          requires:
+            - hold
