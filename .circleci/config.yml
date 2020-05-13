@@ -9,12 +9,12 @@ jobs:
       - image: circleci/golang:1.14
     steps:
       - checkout
-      - go/mod-download-cached
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: Build Server
+          name: Build Oracle
           command: |
-            make gen-ssl-certs  
-            make oracle
+            docker build --target build -t oracle-build:${CIRCLE_SHA1} .
       - persist_to_workspace:
           root: .
           paths:
@@ -28,19 +28,34 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Run unit-tests
           command: |
-            go get -u github.com/jstemmer/go-junit-report
-            mkdir -p $ARTIFACTS && mkdir -p reports
-            go test -coverprofile=coverage.out -v $(go list ./... | grep -v /integration/) > unit_tests.out
-            go tool cover -html=coverage.out -o $ARTIFACTS/coverage.html
-            cat unit_tests.out | go-junit-report > reports/unit_tests.xml
+            mkdir -p ../reports && mkdir -p ../coverage
+            docker volume create reports
+            docker volume create coverage
+            docker create \
+              -v reports:/reports \
+              -v coverage:/coverage \
+              --name helper alpine:3.4 /bin/true
+            docker build --target dev -t dev .
+            docker run -v reports:/reports -v coverage:/coverage dev sh -c \
+              'gotestsum --junitfile /reports/unit_test_report.xml \
+              -- -coverprofile=/coverage/coverage.out $(go list ./... | grep -v /integration/)'
+      - run:
+          name: Recover tests results
+          command: |
+            docker cp  helper:/reports/. ../reports
+            docker cp  helper:/coverage/. ../coverage
+            docker rm helper --force --volumes
+          when: always
       - store_artifacts:
-         path: /tmp/artifacts
+         path: ../coverage
          destination: raw-test-output
       - store_test_results:
-         path: reports
+         path: ../reports/
 
   integration-tests:
     docker:
@@ -82,13 +97,18 @@ jobs:
           name: Run integration tests
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.ci.yml run dev sh -c \
-            "go test -v ./test/integration/... \
-              -appname p2pdoracle \
-              -e integration \
-              -abs-config /app/test/config \
-              -oracle-base-url oracle-server:8080 \
-              2>&1 | go-junit-report > /reports/integration_report.xml"
+            'gotestsum --junitfile /reports/integration_report.xml \
+            -- ./test/integration/... \
+            -appname p2pdoracle \
+            -e integration \
+            -abs-config $(pwd)/test/config \
+            -oracle-base-url oracle-server:8080'
+      - run:
+          name: Recover tests results
+          command: |
             docker cp  helper:/reports/. ./reports
+            docker rm helper --force --volumes
+          when: always
       - store_test_results:
           path: reports/
 
