@@ -1,0 +1,95 @@
+package dlccrypto
+
+import (
+	"encoding/hex"
+
+	"github.com/pkg/errors"
+)
+
+const (
+	SizePrivateKey = 32
+	SizePublicKey  = 33
+	SizeSignature  = 32
+)
+
+// ErrInvalidBytestringSize represents a bytestring of wrong length for the struct type used
+var ErrInvalidBytestringSize = errors.New("Invalid ByteString size")
+
+// NewByteString returns a new ByteString instance
+func NewByteString(bytestring string) (*ByteString, error) {
+	bytes, err := hex.DecodeString(bytestring)
+	if err != nil {
+		return nil, err
+	}
+	return &ByteString{bytes: bytes}, nil
+}
+
+// ByteString represents a bytestring
+type ByteString struct {
+	bytes []byte
+}
+
+// EncodeToString encodes the bytestring to a hexadecimal string
+func (b *ByteString) EncodeToString() string {
+	return hex.EncodeToString(b.bytes)
+}
+
+// NewPrivateKey returns a new PrivateKey instance
+func NewPrivateKey(bytestring string) (*PrivateKey, error) {
+	bt, err := NewByteString(bytestring)
+	if err != nil {
+		return nil, err
+	}
+	if len(bt.bytes) != SizePrivateKey {
+		return nil, invalidSizeError("PrivateKey", SizePrivateKey)
+	}
+	return &PrivateKey{*bt}, nil
+}
+
+// PrivateKey represents a private key
+type PrivateKey struct {
+	ByteString
+}
+
+// NewPublicKey returns a new PublicKey instance
+func NewPublicKey(bytestring string) (*PublicKey, error) {
+	bt, err := NewByteString(bytestring)
+	if err != nil {
+		return nil, err
+	}
+	if len(bt.bytes) != SizePublicKey {
+		return nil, invalidSizeError("PublicKey", SizePublicKey)
+	}
+	return &PublicKey{*bt}, nil
+}
+
+// PublicKey represents a compressed public key
+type PublicKey struct {
+	ByteString
+}
+
+// NewSignature returns a new Signature instance
+func NewSignature(bytestring string) (*Signature, error) {
+	bt, err := NewByteString(bytestring)
+	if err != nil {
+		return nil, err
+	}
+	if len(bt.bytes) != SizeSignature {
+		return nil, invalidSizeError("Signature", SizeSignature)
+	}
+	return &Signature{*bt}, nil
+}
+
+// Signature represents the the s value of a Schnorr signature.
+// As the r value is already known to the users in DLC we do not include it here.
+type Signature struct {
+	ByteString
+}
+
+func invalidSizeError(name string, size int) error {
+	return errors.WithMessagef(
+		ErrInvalidBytestringSize,
+		"Bytestring of %s should be of %d byte size",
+		name,
+		size)
+}
