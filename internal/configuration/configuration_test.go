@@ -2,7 +2,9 @@ package conf
 
 import (
 	"os"
+	"p2pderivatives-oracle/internal/utils/iso8601"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -136,7 +138,20 @@ func TestConfigurationGetDuration_WithDurationValue_ReturnsCorrectValue(t *testi
 	expected, _ := time.ParseDuration("1h10m10s")
 
 	// Act
-	actual := config.GetDuration("unittest.dr")
+	actual := config.GetDuration("unittest.dr", false)
+
+	// Assert
+	assert.Equal(expected, actual)
+}
+
+func TestConfigurationGetDuration_WithDurationISO8601_ReturnsCorrectValue(t *testing.T) {
+	// Arrange
+	config := createConfiguration(t)
+	assert := assert.New(t)
+	expected, _ := iso8601.ParseDuration("P1DT2H6S")
+
+	// Act
+	actual := config.GetDuration("unittest.dr_iso8601", true)
 
 	// Assert
 	assert.Equal(expected, actual)
@@ -168,6 +183,23 @@ func TestConfigurationGetDuration_WithUInt8_ReturnsCorrectValue(t *testing.T) {
 	assert.Equal(expected, actual)
 }
 
+func TestConfigurationGetStringMap_WithStringMap_ReturnsCorrectValue(t *testing.T) {
+	// Arrange
+	config := createConfiguration(t)
+	assert := assert.New(t)
+	expected := map[string]NestedTestConfig{
+		"k1": {Value: true},
+		"k2": {Value: false},
+	}
+
+	// Act
+	actual, err := config.GetStringMap("unittest.string_map", reflect.TypeOf(NestedTestConfig{}))
+
+	// Assert
+	assert.NoError(err)
+	assert.Equal(expected, actual)
+}
+
 func TestConfiguration_WithEnvironmentVariable_ReturnsEnvironmentVariableValue(t *testing.T) {
 	// Arrange
 	expected := 100
@@ -195,21 +227,26 @@ func TestNewConfiguration_FromReader_ReturnsCorrectValue(t *testing.T) {
 	assert.Equal(expected, actual)
 }
 
+type NestedTestConfig struct {
+	Value bool `configkey:"value"`
+}
+
 type UnitTestConfig struct {
-	I         int           `configkey:"unittest.i" validate:"min=10" default:"10"`
-	S         string        `configkey:"unittest.s" validate:"required" default:"hoge"`
-	Ss        []string      `configkey:"unittest.ss" validate:"dive,required" default:"hoge,fuga"`
-	B         bool          `configkey:"unittest.b" default:"true"`
-	Utf8byte  []byte        `configkey:"unittest.utf8byte,utf8" validate:"required" default:"abcde"`
-	Utf8NoEnc []byte        `configkey:"unittest.utf8byte" validate:"required" default:"abcde"`
-	Hexbytes  []byte        `configkey:"unittest.hexbyte,hex" validate:"required" default:"abcd0e"`
-	Dr        time.Duration `configkey:"unittest.dr,duration" validate:"required" default:"1h10m10s"`
-	I64       int64         `configkey:"unittest.i64" validate:"min=11" default:"132904"`
-	UI8       uint8         `configkey:"unittest.ui8" validate:"min=8" default:"8"`
-	UI32      uint32        `configkey:"unittest.ui32" validate:"min=32" default:"32"`
-	UI64      uint64        `configkey:"unittest.ui64" validate:"min=64" default:"64"`
-	F32       float32       `configkey:"unittest.f32" validate:"min=3.2" default:"3.2"`
-	F64       float64       `configkey:"unittest.f64" validate:"min=6.4" default:"6.4"`
+	I         int                         `configkey:"unittest.i" validate:"min=10" default:"10"`
+	S         string                      `configkey:"unittest.s" validate:"required" default:"hoge"`
+	Ss        []string                    `configkey:"unittest.ss" validate:"dive,required" default:"hoge,fuga"`
+	B         bool                        `configkey:"unittest.b" default:"true"`
+	Utf8byte  []byte                      `configkey:"unittest.utf8byte,utf8" validate:"required" default:"abcde"`
+	Utf8NoEnc []byte                      `configkey:"unittest.utf8byte" validate:"required" default:"abcde"`
+	Hexbytes  []byte                      `configkey:"unittest.hexbyte,hex" validate:"required" default:"abcd0e"`
+	Dr        time.Duration               `configkey:"unittest.dr,duration" validate:"required" default:"1h10m10s"`
+	I64       int64                       `configkey:"unittest.i64" validate:"min=11" default:"132904"`
+	UI8       uint8                       `configkey:"unittest.ui8" validate:"min=8" default:"8"`
+	UI32      uint32                      `configkey:"unittest.ui32" validate:"min=32" default:"32"`
+	UI64      uint64                      `configkey:"unittest.ui64" validate:"min=64" default:"64"`
+	F32       float32                     `configkey:"unittest.f32" validate:"min=3.2" default:"3.2"`
+	F64       float64                     `configkey:"unittest.f64" validate:"min=6.4" default:"6.4"`
+	StringMap map[string]NestedTestConfig `configkey:"unittest.string_map"`
 	Ignored   bool
 }
 
@@ -254,6 +291,11 @@ func TestConfiguration_InitializeComponentConfig_CorrectlyInitializesConfig(t *t
 	assert.Equal(uint64(64), unitTestConfig.UI64)
 	assert.Equal(float32(3.2), unitTestConfig.F32)
 	assert.Equal(float64(6.4), unitTestConfig.F64)
+	assert.Equal(map[string]NestedTestConfig{
+		"k1": {Value: true},
+		"k2": {Value: false},
+	}, unitTestConfig.StringMap)
+
 }
 
 func TestConfiguration_InitializeValidComponentConfig_NoError(t *testing.T) {

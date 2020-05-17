@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/hex"
 	"io"
+	"p2pderivatives-oracle/internal/utils/iso8601"
 	"reflect"
 	"strings"
 	"time"
@@ -32,10 +33,12 @@ const (
 )
 
 const (
-	configTagName  = "configkey"
-	defaultTagName = "default"
-	utf8TagValue   = "utf8"
-	hexTagValue    = "hex"
+	configTagName    = "configkey"
+	defaultTagName   = "default"
+	utf8TagValue     = "utf8"
+	hexTagValue      = "hex"
+	durationTagValue = "duration"
+	iso8601TagValue  = "iso8601"
 )
 
 var (
@@ -156,9 +159,20 @@ func (c *Configuration) GetByte(key string, enc Encoding) (b []byte, err error) 
 
 // GetDuration returns the values associated with the given key as a Duration
 // If the format of the value does not match Duration 0 is returned.
-func (c *Configuration) GetDuration(key string) time.Duration {
+func (c *Configuration) GetDuration(key string, isISO8601 bool) time.Duration {
 	c.ensureInitialized()
-	return c.viper.GetDuration(key)
+	if !isISO8601 {
+		return c.viper.GetDuration(key)
+	}
+	str := c.GetString(key)
+	if len(str) == 0 {
+		return 0
+	}
+	dur, err := iso8601.ParseDuration(str)
+	if err != nil {
+		return 0
+	}
+	return dur
 }
 
 // SetFormat specifies the format of the configuration file.
@@ -198,6 +212,24 @@ func (c *Configuration) GetUInt64(key string) uint64 {
 	return c.viper.GetUint64(key)
 }
 
+// GetStringMap returns the values associated with the given key as a map[string]T{}.
+func (c *Configuration) GetStringMap(key string, vType reflect.Type) (interface{}, error) {
+	c.ensureInitialized()
+	untypedMap := c.viper.GetStringMap(key)
+	mapType := reflect.MapOf(reflect.TypeOf(""), vType)
+	res := reflect.MakeMap(mapType)
+	for k, _ := range untypedMap {
+		subconf := c.Sub(key + "." + k)
+		instance := reflect.New(vType)
+		value := instance.Interface()
+		if err := subconf.InitializeComponentConfig(value); err != nil {
+			return nil, err
+		}
+		res.SetMapIndex(reflect.ValueOf(k), instance.Elem())
+	}
+	return res.Interface(), nil
+}
+
 // GetFloat32 returns the values associated with the given key as a float32.
 func (c *Configuration) GetFloat32(key string) float32 {
 	c.ensureInitialized()
@@ -210,16 +242,20 @@ func (c *Configuration) GetFloat32(key string) float32 {
 // and validation tags for validation (see
 // https://godoc.org/gopkg.in/go-playground/validator.v9).
 // Example:
-// type TestConfig struct {
-// 	   I        int           `configkey:"unittest.i" validate:"min=10" default:"10"`
-// 	   S        string        `configkey:"unittest.s" validate:"required" default:"hoge"`
-// 	   Ss       []string      `configkey:"unittest.ss" validate:"dive,required" default:"hoge,fuga"`
-// 	   B        bool          `configkey:"unittest.b" default:"true"`
-// 	   Utf8byte []byte        `configkey:"unittest.utf8byte,utf8" validate:"required" default:"abcde"`
-// 	   Hexbytes []byte        `configkey:"unittest.hexbyte,hex" validate:"required" default:"abcd0e"`
-// 	   Dr       time.Duration `configkey:"unittest.dr,duration" validate:"required" default:"1h10m10s"`
-// 	   I64      int64         `configkey:"unittest.i64" validate:"min=11" default:"132904"`
-// }
+//type TestConfig struct {
+//	I        int           `configkey:"unittest.i" validate:"min=10" default:"10"`
+//	S        string        `configkey:"unittest.s" validate:"required" default:"hoge"`
+//	Ss       []string      `configkey:"unittest.ss" validate:"dive,required" default:"hoge,fuga"`
+//	B        bool          `configkey:"unittest.b" default:"true"`
+//	Utf8byte []byte        `configkey:"unittest.utf8byte,utf8" validate:"required" default:"abcde"`
+//	Hexbytes []byte        `configkey:"unittest.hexbyte,hex" validate:"required" default:"abcd0e"`
+//	Dr       time.Duration `configkey:"unittest.dr,duration,iso8601" validate:"required" default:"PT1H30M"`
+//	I64      int64         `configkey:"unittest.i64" validate:"min=11" default:"132904"`
+//	m        map[string]struct {
+//		nestedString string `configkey:"ex_string" default:"example"`
+//	} `configkey:"unittest.nested_map"`
+//}
+
 func (c *Configuration) InitializeComponentConfig(compConf interface{}) error {
 	c.ensureInitialized()
 	v := reflect.ValueOf(compConf)
@@ -257,8 +293,12 @@ func (c *Configuration) InitializeComponentConfig(compConf interface{}) error {
 			value := c.GetInt(tag)
 			field.SetInt(int64(value))
 		case reflect.Int64:
-			if len(tagValues) > 1 && tagValues[1] == "duration" {
-				value := c.GetDuration(tag)
+			if len(tagValues) > 1 && tagValues[1] == durationTagValue {
+				isIso8601 := false
+				if len(tagValues) > 2 && tagValues[2] == iso8601TagValue {
+					isIso8601 = true
+				}
+				value := c.GetDuration(tag, isIso8601)
 				field.Set(reflect.ValueOf(value))
 			} else {
 				value := c.GetInt64(tag)
@@ -285,6 +325,12 @@ func (c *Configuration) InitializeComponentConfig(compConf interface{}) error {
 		case reflect.Float64:
 			value := c.GetFloat64(tag)
 			field.SetFloat(value)
+		case reflect.Map:
+			value, err := c.GetStringMap(tag, field.Type().Elem())
+			if err != nil {
+				return err
+			}
+			field.Set(reflect.ValueOf(value))
 		default:
 			fieldType := field.Type()
 			switch fieldType {
@@ -319,6 +365,17 @@ func (c *Configuration) InitializeComponentConfig(compConf interface{}) error {
 
 	validate := validator.New()
 	return validate.Struct(compConf)
+}
+
+func (c *Configuration) Sub(tag string) *Configuration {
+	return &Configuration{
+		AppName:         c.AppName,
+		EnvironmentName: c.EnvironmentName,
+
+		paths:       c.paths,
+		viper:       c.viper.Sub(tag),
+		initialized: true,
+	}
 }
 
 func (c *Configuration) ensureInitialized() {
