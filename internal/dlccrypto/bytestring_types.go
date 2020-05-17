@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	SizePrivateKey = 32
-	SizePublicKey  = 33
-	SizeSignature  = 32
+	sizePrivateKey = 32
+	sizePublicKey  = 33
+	sizeSignature  = 32
 )
 
 // ErrInvalidBytestringSize represents a bytestring of wrong length for the struct type used
@@ -40,8 +40,8 @@ func NewPrivateKey(bytestring string) (*PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(bt.bytes) != SizePrivateKey {
-		return nil, invalidSizeError("PrivateKey", SizePrivateKey)
+	if len(bt.bytes) != sizePrivateKey {
+		return nil, invalidSizeError("PrivateKey", sizePrivateKey)
 	}
 	return &PrivateKey{*bt}, nil
 }
@@ -57,8 +57,8 @@ func NewPublicKey(bytestring string) (*PublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(bt.bytes) != SizePublicKey {
-		return nil, invalidSizeError("PublicKey", SizePublicKey)
+	if len(bt.bytes) != sizePublicKey {
+		return nil, invalidSizeError("PublicKey", sizePublicKey)
 	}
 	return &PublicKey{*bt}, nil
 }
@@ -74,8 +74,8 @@ func NewSignature(bytestring string) (*Signature, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(bt.bytes) != SizeSignature {
-		return nil, invalidSizeError("Signature", SizeSignature)
+	if len(bt.bytes) != sizeSignature {
+		return nil, invalidSizeError("Signature", sizeSignature)
 	}
 	return &Signature{*bt}, nil
 }

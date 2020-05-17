@@ -26,10 +26,16 @@ unittest:
   hexbyte: abcd0e
   invalidhex: invalid
   dr: 1h10m10s
+  dr_iso8601: P1DT2H6S
   i64: 132904
   ui8: 8
   ui32: 32
   ui64: 64
   f32: 3.2
   f64: 6.4
+  string_map:
+    k1:
+      value: true
+    k2:
+      value: false
 
