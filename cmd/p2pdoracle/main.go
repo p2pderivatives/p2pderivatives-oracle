@@ -10,8 +10,13 @@ import (
 	"os/signal"
 	"p2pderivatives-oracle/internal/api"
 	conf "p2pderivatives-oracle/internal/configuration"
+	"p2pderivatives-oracle/internal/cryptocompare"
+	"p2pderivatives-oracle/internal/database/entity"
 	"p2pderivatives-oracle/internal/database/orm"
+	"p2pderivatives-oracle/internal/datafeed"
+	"p2pderivatives-oracle/internal/dlccrypto"
 	"p2pderivatives-oracle/internal/log"
+	"p2pderivatives-oracle/internal/oracle"
 	"p2pderivatives-oracle/internal/router"
 	"syscall"
 	"time"
@@ -59,15 +64,9 @@ func main() {
 
 	logInstance := newInitializedLog(config)
 	log := logInstance.Logger
-	ormInstance := newInitializedOrm(config, logInstance)
-	if *migrate {
-		err := doMigration(ormInstance)
 
-		if err != nil {
-			log.Fatalf("Failed to apply migration %v", err)
-		}
-	}
-	routerInstance := newInitializedRouter(config, ormInstance, logInstance)
+	// Initialize Router
+	routerInstance := newInitializedRouter(logInstance, config)
 
 	serverConfig := &Config{}
 	config.InitializeComponentConfig(serverConfig)
@@ -132,7 +131,9 @@ func newInitializedLog(config *conf.Configuration) *log.Log {
 
 func newInitializedOrm(config *conf.Configuration, log *log.Log) *orm.ORM {
 	ormConfig := &orm.Config{}
-	config.InitializeComponentConfig(ormConfig)
+	if err := config.InitializeComponentConfig(ormConfig); err != nil {
+		panic(err)
+	}
 	ormInstance := orm.NewORM(ormConfig, log)
 	err := ormInstance.Initialize()
 
@@ -140,13 +141,19 @@ func newInitializedOrm(config *conf.Configuration, log *log.Log) *orm.ORM {
 		panic("Could not initialize database.")
 	}
 
+	if *migrate {
+		if err := doMigration(ormInstance); err != nil {
+			log.Logger.Fatalf("Could not apply migrations")
+			panic(err)
+		}
+	}
+
 	return ormInstance
 }
 
-func newInitializedRouter(config *conf.Configuration, orm *orm.ORM, log *log.Log) *router.Router {
-	apiConfig := &api.Config{}
-	config.InitializeComponentConfig(apiConfig)
-	routerInstance := router.NewRouter(orm, log)
+func newInitializedRouter(log *log.Log, config *conf.Configuration) *router.Router {
+	api := NewDefaultOracleAPI(log, config)
+	routerInstance := router.NewRouter(log, api)
 	err := routerInstance.Initialize()
 
 	if err != nil {
@@ -156,7 +163,47 @@ func newInitializedRouter(config *conf.Configuration, orm *orm.ORM, log *log.Log
 	return routerInstance
 }
 
+// NewDefaultOracleAPI returns a router.API with default crypto, database and datafeed services
+func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
+	// Setup crypto service
+	cryptoInstance := dlccrypto.NewCfdgoCryptoService()
+
+	// Setup Oracle
+	oracleConfig := &oracle.Config{}
+	config.InitializeComponentConfig(oracleConfig)
+	oracleInstance, err := oracle.FromConfig(oracleConfig)
+	if err != nil {
+		l.Logger.Fatalf("Could not create a oracle instance")
+		panic(err)
+	}
+
+	// Setup orm service
+	ormInstance := newInitializedOrm(config, l)
+
+	// Setup DataFeed service
+	var feedInstance datafeed.DataFeed
+	if config.GetBool("datafeed.dummy") {
+		feedInstance = datafeed.NewDummyDataFeed()
+	} else {
+		feedConfig := &cryptocompare.Config{}
+		config.Sub("datafeed").InitializeComponentConfig(feedConfig)
+		cryptoCompareClient := cryptocompare.NewClient(feedConfig)
+		cryptoCompareClient.Initialize()
+		feedInstance = cryptoCompareClient
+	}
+
+	apiConfig := &api.Config{}
+	err = config.InitializeComponentConfig(apiConfig)
+	if err != nil {
+		panic(err)
+	}
+	return api.NewOracleAPI(apiConfig, l, oracleInstance, ormInstance, cryptoInstance, feedInstance)
+}
+
 func doMigration(o *orm.ORM) error {
-	// TODO add future models
-	return nil
+	db := o.GetDB()
+	err := db.AutoMigrate(&entity.Asset{}, &entity.DLCData{}).Error
+	err = db.Create(&entity.Asset{AssetID: "btcusd", Description: "BTC USD"}).Error
+	err = db.Create(&entity.Asset{AssetID: "btcjpy", Description: "BTC JPY"}).Error
+	return err
 }

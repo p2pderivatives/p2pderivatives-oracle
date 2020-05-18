@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/gin-gonic/gin v1.6.2
 	github.com/go-resty/resty/v2 v2.2.0
+	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
@@ -30,4 +31,5 @@ require (
 	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gotest.tools/gotestsum v0.4.2 // indirect
+	rsc.io/sampler v1.99.99 // indirect
 )
