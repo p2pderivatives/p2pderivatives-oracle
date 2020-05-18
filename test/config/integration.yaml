@@ -1,13 +1,17 @@
 server:
   address: "0.0.0.0:8080"
+oracle:
+  key_file: ./certs/oracle/key.pem
+  key_pass:
+    file: ./certs/oracle/pass.txt
 log:
   dir: _log
   output_stdout: true
   basename: unittest.log.%Y-%m-%d
-  rotation_interval: 24h
+  rotation_interval: PT24H
   rotation_counts: 7
-  format: text
-  level: debug
+  format: json
+  level: info
 database:
   log: false
   host: localhost
@@ -18,3 +22,10 @@ database:
 api:
   hello:
     count: 3
+  assets:
+    btcusd:
+      frequency: PT1H
+      range: P10DT
+    btcjpy:
+      frequency: PT1H
+      range: P2MT
