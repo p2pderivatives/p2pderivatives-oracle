@@ -22,6 +22,8 @@ github.com/cryptogarageinc/cfd-go v0.1.21 h1:Ju0RDcK0Tt/8AWCQ2zPNUjdsfLRbpXjVlgg
 github.com/cryptogarageinc/cfd-go v0.1.21/go.mod h1:9RAl7Mwh83eFeAR42/wlr5hTHkSyZY0yRN0bkyE/xqk=
 github.com/cryptogarageinc/cfd-go v0.1.22 h1:uJlZv8FwsBcKw0r5LLqIxDUqfXxvrHPm6/dZTS4Kwh8=
 github.com/cryptogarageinc/cfd-go v0.1.22/go.mod h1:9RAl7Mwh83eFeAR42/wlr5hTHkSyZY0yRN0bkyE/xqk=
+github.com/cryptogarageinc/cfd-go v0.1.24 h1:Q1ZKovcHNUzAnM5pijBOiF+TEP78h+vNiQKM37tJeMA=
+github.com/cryptogarageinc/cfd-go v0.1.24/go.mod h1:9RAl7Mwh83eFeAR42/wlr5hTHkSyZY0yRN0bkyE/xqk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
