@@ -1,8 +1,10 @@
 version: '3.4'
 services:
   oracle-server:
+    image: oracle-server:${CIRCLE_SHA1}
     volumes:
       - oracle-config:/config
+      - oracle-secrets:/key
   oracle-db:
     volumes:
       - db-certs:/certs
@@ -10,7 +12,9 @@ services:
     build:
       context: .
       target: dev
-    volumes: 
+    image: oracle-dev:${CIRCLE_SHA1}
+    volumes:
+      - oracle-secrets:/key
       - reports:/reports
 
   dockerize:
@@ -20,6 +24,8 @@ services:
 volumes:
   oracle-db-data:
   oracle-config:
+    external: true
+  oracle-secrets:
     external: true
   db-certs:
     external: true

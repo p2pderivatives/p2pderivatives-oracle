@@ -1,9 +1,11 @@
+// +build integration
+
 package server_test
 
 import (
 	"net/http"
 	"os"
-	"p2pderivatives-oracle/test/integration/helper"
+	helper "p2pderivatives-oracle/test/integration"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
