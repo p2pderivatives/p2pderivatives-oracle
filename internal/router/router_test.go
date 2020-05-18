@@ -1,72 +1,72 @@
-package router
+package router_test
 
 import (
-	"p2pderivatives-oracle/internal/api"
-	"p2pderivatives-oracle/internal/database/orm"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"p2pderivatives-oracle/internal/router"
 	"p2pderivatives-oracle/test"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestRouter() *Router {
-	config := test.GetTestConfig()
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	l := test.GetTestLogger(config)
-	ormInstance := orm.NewORM(&ormConfig, l)
-	ormInstance.Initialize()
-	apiConfig := &api.Config{}
-	config.InitializeComponentConfig(apiConfig)
-	routerConfig := &Config{APIConfig: apiConfig}
-	config.InitializeComponentConfig(routerConfig)
-	return NewRouter(routerConfig, ormInstance, l)
+func NewTestRouter(api router.API) *router.Router {
+	gin.SetMode(gin.TestMode)
+	l := test.NewLogger()
+	return router.NewRouter(l, api)
 }
 
 func TestRouterInitializeFinalize_NoError(t *testing.T) {
-	// Arrange
-	assert := assert.New(t)
-	router := getTestRouter()
-	// Act
+	router := NewTestRouter(NewMockAPI())
 	err := router.Initialize()
 	err2 := router.Finalize()
-
-	// Assert
-	assert.NoError(err)
-	assert.NoError(err2)
+	assert.NoError(t, err)
+	assert.NoError(t, err2)
 }
 
 func TestRouterInitialize_IsInitialized_True(t *testing.T) {
-	// Arrange
-	assert := assert.New(t)
-	router := getTestRouter()
+	router := NewTestRouter(NewMockAPI())
 	router.Initialize()
 	defer router.Finalize()
 
-	// Assert
-	assert.True(router.IsInitialized())
+	assert.True(t, router.IsInitialized())
 }
 
 func TestRouterGetEngine_Initialized_Succeeds(t *testing.T) {
-	// Arrange
-	assert := assert.New(t)
-	router := getTestRouter()
+	router := NewTestRouter(NewMockAPI())
 	router.Initialize()
-	// Act
 	routerEngine := router.GetEngine()
 
-	// Assert
-	assert.NotNil(routerEngine)
+	assert.NotNil(t, routerEngine)
 }
 
 func TestRouterGetEngine_NotInitialized_Panics(t *testing.T) {
-	// Arrange
-	assert := assert.New(t)
-	router := Router{}
+	router := NewTestRouter(NewMockAPI())
 
 	// Act
 	act := func() { router.GetEngine() }
 
 	// Assert
-	assert.Panics(act)
+	assert.Panics(t, act)
+}
+
+func TestRouterInitialized_API_Succeeds(t *testing.T) {
+	router := NewTestRouter(NewMockAPI())
+	err := router.Initialize()
+	assert.NoError(t, err)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", GetRoute, nil)
+	router.GetEngine().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	response := &testAPIResponse{}
+	err = json.Unmarshal([]byte(w.Body.String()), response)
+	assert.Nil(t, err)
+	assert.EqualValues(t, &testAPIResponse{
+		HasMiddleware: true,
+		HasService:    true,
+	}, response)
 }

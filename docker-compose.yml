@@ -6,6 +6,8 @@ services:
     image: oracle-server
     environment: 
       - P2PDORACLE_DATABASE_HOST=oracle-db
+      - P2PDORACLE_ORACLE_KEY_FILE=/key/key.pem
+      - P2PDORACLE_ORACLE_KEY_PASS_FILE=/key/pass.txt
     restart: always
     depends_on:
       - oracle-db
@@ -13,6 +15,7 @@ services:
       - 8080:8080
     volumes:
       - ./test/config:/config
+      - ./certs/oracle:/key
 
   oracle-db:
     image: "postgres:12.2"
