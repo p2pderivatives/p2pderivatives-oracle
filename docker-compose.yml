@@ -6,8 +6,8 @@ services:
     image: oracle-server
     environment: 
       - P2PDORACLE_DATABASE_HOST=oracle-db
-      - P2PDORACLE_ORACLE_KEY_FILE=/key/key.pem
-      - P2PDORACLE_ORACLE_KEY_PASS_FILE=/key/pass.txt
+      - P2PDORACLE_ORACLE_KEYFILE=/key/key.pem
+      - P2PDORACLE_ORACLE_KEYPASS_FILE=/key/pass.txt
     restart: always
     depends_on:
       - oracle-db

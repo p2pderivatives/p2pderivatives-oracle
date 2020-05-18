@@ -1,9 +1,9 @@
 server:
   address: "0.0.0.0:8080"
 oracle:
-  key_file: ./certs/oracle/key.pem
-  key_pass:
-    file: ./certs/oracle/pass.txt
+  keyFile: ../../certs/oracle/key.pem
+  keyPass:
+    file: ../../certs/oracle/pass.txt
 log:
   dir: _log
   output_stdout: true
@@ -20,12 +20,21 @@ database:
   dbpassword: 1234
   dbname: db
 api:
-  hello:
-    count: 3
   assets:
     btcusd:
+      startDate: 2020-01-01T00:00:00Z
       frequency: PT1H
       range: P10DT
     btcjpy:
+      startDate: 2020-01-01T00:00:00Z
       frequency: PT1H
       range: P2MT
+# to use avoid using cryptocompare
+# use :
+# datafeed:
+#   dummy: true
+datafeed:
+  cryptoCompare:
+    baseUrl: https://min-api.cryptocompare.com/data
+    apiKey: 6c8c899bacde7f54b5e312a862d162c36042669dafdb4c75b87feacc3c70c9c4
+  dummy: true

@@ -18,7 +18,7 @@ Once that is done, the server can be run locally using `make run-local-server`.
 The integration tests uses the go REST client library [`Resty`](https://github.com/go-resty/resty).
 You can run integration tests by using `make integration-test` on local (with an oracle server running).
 or by using  
-`go test ./test/integration/... -appname p2pdoracle -e integration -abs-config $(pwd)/test/config -oracle-base-url <my-url>`
+`gotestsum -- -tags=integration -parallel=4 ./test/integration/... -config-file-name <config-file> -oracle-base-url <oracle-url>`
 
 ## Running using Docker
 

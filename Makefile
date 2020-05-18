@@ -32,15 +32,21 @@ gen-ssl-certs:
 	openssl req -x509 -in ${CERT_TEMP}/db.req -text -key $(DB_CERTS_DIR)/db.key -out $(DB_CERTS_DIR)/db.crt
 	chmod 600 $(DB_CERTS_DIR)/db.key
 
+MOCK_DIR = test/mock
+gen-mock:
+	mkdir -p $(MOCK_DIR)
+	mockgen -source internal/dlccrypto/crypto_service.go -destination $(MOCK_DIR)/dlccrypto/mock_crypto_service.go
+	mockgen -source internal/datafeed/datafeed.go -destination $(MOCK_DIR)/datafeed/mock_datafeed.go
+
 oracle:
 	mkdir -p bin
 	go build -o ./bin/oracle ./cmd/p2pdoracle/main.go
 
 unit-test:
-	gotestsum -- $(shell go list ./... | grep -v /integration/)
+	gotestsum -- -cover ./...
 
 integration-test:
-	gotestsum -- ./test/integration/... -appname p2pdoracle -e integration -abs-config $(shell pwd)/test/config
+	gotestsum -- -tags=integration -parallel=4 ./test/integration/... -config-file-name integration
 
 run-server-local: oracle
 	./bin/oracle -config ./test/config -appname p2pdoracle -e integration -migrate

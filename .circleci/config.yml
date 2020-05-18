@@ -6,11 +6,16 @@ jobs:
 
   build:
     docker:
-      - image: circleci/golang:1.14
+      - image: cimg/go:1.14
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Setup generated files
+          command: |
+            make gen-ssl-certs
+            make gen-oracle-key
       - run:
           name: Build Oracle
           command: |
@@ -22,7 +27,7 @@ jobs:
 
   tests:
     docker:
-      - image: circleci/golang:1.14
+      - image: cimg/go:1.14
         environment:
           ARTIFACTS: /tmp/artifacts
     steps:
@@ -43,7 +48,7 @@ jobs:
             docker build --target dev -t dev .
             docker run -v reports:/reports -v coverage:/coverage dev sh -c \
               'gotestsum --junitfile /reports/unit_test_report.xml \
-              -- -coverprofile=/coverage/coverage.out $(go list ./... | grep -v /integration/)'
+              -- -coverprofile=/coverage/coverage.out ./...'
       - run:
           name: Recover tests results
           command: |
@@ -59,7 +64,7 @@ jobs:
 
   integration-tests:
     docker:
-      - image: circleci/golang:1.14
+      - image: cimg/go:1.14
     steps:
       - attach_workspace:
           at: .
@@ -69,15 +74,17 @@ jobs:
           name: Setup configuration and volumes
           command: |
             docker volume create oracle-config #ensure same name in docker-compose.ci
+            docker volume create oracle-secrets
             docker volume create db-certs
             docker volume create reports
-            make gen-ssl-certs
             docker create \
               -v oracle-config:/config \
+              -v oracle-secrets:/keys \
               -v db-certs:/certs \
               -v reports:/reports \
               --name helper alpine:3.4 /bin/true
             docker cp ./test/config/. helper:/config
+            docker cp ./certs/oracle/. helper:/keys
             docker cp ./certs/db/. helper:/certs
             # adding permissions 
             docker-compose -f docker-compose.yml -f docker-compose.ci.yml run oracle-db bash -c \
@@ -98,10 +105,10 @@ jobs:
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.ci.yml run dev sh -c \
             'gotestsum --junitfile /reports/integration_report.xml \
-            -- ./test/integration/... \
-            -appname p2pdoracle \
-            -e integration \
-            -abs-config $(pwd)/test/config \
+            -- -tags=integration \
+            -parallel=4 \
+            ./test/integration/... \
+            -config-file-name integration \
             -oracle-base-url oracle-server:8080'
       - run:
           name: Recover tests results
