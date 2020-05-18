@@ -146,9 +146,7 @@ func newInitializedOrm(config *conf.Configuration, log *log.Log) *orm.ORM {
 func newInitializedRouter(config *conf.Configuration, orm *orm.ORM, log *log.Log) *router.Router {
 	apiConfig := &api.Config{}
 	config.InitializeComponentConfig(apiConfig)
-	routerConfig := &router.Config{APIConfig: apiConfig}
-	config.InitializeComponentConfig(routerConfig)
-	routerInstance := router.NewRouter(routerConfig, orm, log)
+	routerInstance := router.NewRouter(orm, log)
 	err := routerInstance.Initialize()
 
 	if err != nil {

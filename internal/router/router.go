@@ -1,31 +1,28 @@
 package router
 
 import (
-	"p2pderivatives-oracle/internal/api"
-	"p2pderivatives-oracle/internal/database/orm"
 	"p2pderivatives-oracle/internal/log"
-	"p2pderivatives-oracle/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-// Router represent an Router instance
+// Router represent a Router instance
+// registered middleware :
+//	- gin.Recovery
 type Router struct {
+	api         API
 	ginRouter   *gin.Engine
-	orm         *orm.ORM
-	config      *Config
 	log         *log.Log
 	logger      *logrus.Logger
 	initialized bool
 }
 
 // NewRouter creates a new Router structure with the given parameters.
-func NewRouter(config *Config, orm *orm.ORM, l *log.Log) *Router {
+func NewRouter(l *log.Log, api API) *Router {
 	return &Router{
-		orm:         orm,
-		config:      config,
+		api:         api,
 		log:         l,
 		initialized: false,
 	}
@@ -41,28 +38,22 @@ func (r *Router) Initialize() error {
 	r.log.Logger.Info("Router initialization starts")
 	defer r.log.Logger.Info("Router initialization end")
 
-	if !r.orm.IsInitialized() {
-		err := errors.New("ORM is not initialized")
-		r.log.Logger.Error(err)
-		return err
-	}
+	if !r.api.AreServicesInitialized() {
+		if err := r.api.InitializeServices(); err != nil {
+			r.log.Logger.Errorf("Error while initializing api services")
+			return err
+		}
 
-	if r.config.APIConfig == nil {
-		err := errors.New("Router's Api configuration is not set")
-		r.log.Logger.Error(err)
-		return err
 	}
-
 	router := gin.New()
 
 	// middlewares
 	router.Use(gin.Recovery())
-	router.Use(middleware.GinLogrus(r.log.Logger))
-	router.Use(middleware.Orm(r.orm))
-	router.Use(middleware.RequestID())
+	router.Use(r.api.GlobalMiddlewares()...)
 
 	// routes
-	api.BindAllRoutes(router, r.config.APIConfig)
+	baseRoute := router.Group("")
+	r.api.Routes(baseRoute)
 
 	r.ginRouter = router
 	r.initialized = true
@@ -76,9 +67,9 @@ func (r *Router) IsInitialized() bool {
 
 // Finalize releases the resources held by the router.
 func (r *Router) Finalize() error {
-	err := r.orm.Finalize()
+	err := r.api.FinalizeServices()
 	if err != nil {
-		return errors.Errorf("failed to close http router")
+		return errors.Errorf("failed to gracefully close http router")
 	}
 	return nil
 }

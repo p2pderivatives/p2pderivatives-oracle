@@ -34,7 +34,7 @@ func TestOrm_GetColumnNames(t *testing.T) {
 func TestOrmGetTableName_Initialized_ReturnsCorrectName(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	ormInstance := test.InitializeORM(&TestModel{})
+	ormInstance := test.NewOrm(&TestModel{})
 
 	// Act
 	name := ormInstance.GetTableName(&TestModel{})
@@ -58,11 +58,10 @@ func TestOrmGetTableName_Uninitialized_ReturnsCorrectName(t *testing.T) {
 func TestOrmInitializeFinalize_NoError(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	config := test.GetTestConfig()
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	l := test.GetTestLogger(config)
-	ormInstance := orm.NewORM(&ormConfig, l)
+	ormConfig := &orm.Config{}
+	test.InitializeConfig(ormConfig)
+	l := test.NewLogger()
+	ormInstance := orm.NewORM(ormConfig, l)
 
 	// Act
 	err := ormInstance.Initialize()
@@ -76,11 +75,10 @@ func TestOrmInitializeFinalize_NoError(t *testing.T) {
 func TestOrmInitialize_IsInitialized_True(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	config := test.GetTestConfig()
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	l := test.GetTestLogger(config)
-	ormInstance := orm.NewORM(&ormConfig, l)
+	ormConfig := &orm.Config{}
+	test.InitializeConfig(ormConfig)
+	l := test.NewLogger()
+	ormInstance := orm.NewORM(ormConfig, l)
 	ormInstance.Initialize()
 	defer ormInstance.Finalize()
 
@@ -91,7 +89,7 @@ func TestOrmInitialize_IsInitialized_True(t *testing.T) {
 func TestOrmGetDB_Initialized_Succeeds(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	orm := test.InitializeORM()
+	orm := test.NewOrm()
 
 	// Act
 	db := orm.GetDB()
