@@ -15,10 +15,9 @@ type TestMigrationModel struct {
 func TestMigrationInitialize_IsInitialized(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	config := test.GetTestConfig()
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	ormInstance := orm.NewORM(&ormConfig, test.GetTestLogger(config))
+	ormConfig := &orm.Config{}
+	test.InitializeConfig(ormConfig)
+	ormInstance := orm.NewORM(ormConfig, test.NewLogger())
 	ormInstance.Initialize()
 	migrator := orm.NewMigrator(ormInstance, &TestMigrationModel{})
 
@@ -32,10 +31,9 @@ func TestMigrationInitialize_IsInitialized(t *testing.T) {
 func TestMigrationInitialize_HasCorrectTable(t *testing.T) {
 	// Arrange
 	assert := assert.New(t)
-	config := test.GetTestConfig()
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	ormInstance := orm.NewORM(&ormConfig, test.GetTestLogger(config))
+	ormConfig := &orm.Config{}
+	test.InitializeConfig(ormConfig)
+	ormInstance := orm.NewORM(ormConfig, test.NewLogger())
 	ormInstance.Initialize()
 	migrator := orm.NewMigrator(ormInstance, &TestMigrationModel{})
 	migrator.Initialize()

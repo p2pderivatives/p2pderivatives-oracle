@@ -1,7 +1,7 @@
 package test
 
 import (
-	"fmt"
+	"io/ioutil"
 	conf "p2pderivatives-oracle/internal/configuration"
 	"p2pderivatives-oracle/internal/database/orm"
 	"p2pderivatives-oracle/internal/log"
@@ -9,44 +9,63 @@ import (
 	"runtime"
 )
 
-// GetTestConfig returns a configuration for unit tests.
-func GetTestConfig() *conf.Configuration {
-	envName := "unittest"
+var (
+	// DirectoryPath directory path containing test helpers and vectors
+	DirectoryPath string
+	// VectorsDirectoryPath directory path containing test vectors
+	VectorsDirectoryPath string
+	// ConfigDirectoryPath directory path containing configuration files
+	ConfigDirectoryPath string
+
+	configuration *conf.Configuration
+)
+
+func init() {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		panic("No caller information.")
 	}
-	fmt.Printf("called by %s", filename)
-	confPath, _ := filepath.Abs(filepath.Join(filepath.Dir(filename), "config"))
-	config := conf.NewConfiguration("unittest", envName, []string{confPath})
-	err := config.Initialize()
+	absTestDirPath, _ := filepath.Abs(filepath.Dir(filename))
+	DirectoryPath = absTestDirPath
+	VectorsDirectoryPath = filepath.Join(DirectoryPath, "vectors")
+	ConfigDirectoryPath = filepath.Join(DirectoryPath, "config")
+	envName := "unittest"
+	configuration = conf.NewConfiguration("unittest", envName, []string{ConfigDirectoryPath})
+	err := configuration.Initialize()
 	if err != nil {
 		panic("Failed to initialize configuration")
 	}
-
-	return config
 }
 
-// GetTestLogger returns a logger for unit tests.
-func GetTestLogger(config *conf.Configuration) *log.Log {
-	logConfig := log.Config{}
-	config.InitializeComponentConfig(&logConfig)
-	log := log.NewLog(&logConfig)
-	err := log.Initialize()
+// InitializeSubConfig initializes a sub component configuration using initialized configuration.
+func InitializeSubConfig(prefixKey string, componentConfig interface{}) error {
+	return configuration.Sub(prefixKey).InitializeComponentConfig(componentConfig)
+}
+
+// InitializeConfig initializes a component configuration using initialized configuration.
+func InitializeConfig(componentConfig interface{}) error {
+	return configuration.InitializeComponentConfig(componentConfig)
+}
+
+// NewLogger returns a test logger initialized (the logs will be discarded)
+func NewLogger() *log.Log {
+	logConfig := &log.Config{}
+	InitializeConfig(logConfig)
+	logger := log.NewLog(logConfig)
+	err := logger.Initialize()
+	logger.Logger.SetOutput(ioutil.Discard)
 	if err != nil {
 		panic("Could not initialize log.")
 	}
-
-	return log
+	return logger
 }
 
-// InitializeORM initializes the global db for unit tests.
-func InitializeORM(models ...interface{}) *orm.ORM {
-	config := GetTestConfig()
-	logger := GetTestLogger(config)
-	ormConfig := orm.Config{}
-	config.InitializeComponentConfig(&ormConfig)
-	ormInstance := orm.NewORM(&ormConfig, logger)
+// NewOrm returns a test orm initialized migrated models.
+func NewOrm(models ...interface{}) *orm.ORM {
+	logger := NewLogger()
+	ormConfig := &orm.Config{}
+	InitializeConfig(ormConfig)
+	ormInstance := orm.NewORM(ormConfig, logger)
 	ormInstance.Initialize()
 	orm.NewMigrator(ormInstance, models...).Initialize()
 	return ormInstance
