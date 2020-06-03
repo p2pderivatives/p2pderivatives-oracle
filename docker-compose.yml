@@ -4,6 +4,11 @@ services:
     build:
       context: .
     image: oracle-server
+    command: |
+      -config /config
+      -appname p2pdoracle
+      -e integration
+      -migrate
     environment: 
       - P2PDORACLE_DATABASE_HOST=oracle-db
       - P2PDORACLE_ORACLE_KEYFILE=/key/key.pem
