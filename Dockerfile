@@ -47,6 +47,7 @@ RUN unzip -q ${CFD_GO_ZIP} -d / \
     && rm /p2pdoracle/${CFD_GO_ZIP}
 
 RUN mkdir -p /config
+COPY ./test/config/default.release.yml /config/default.yml
 VOLUME [ "/config" ]
 RUN mkdir -p /key
 VOLUME ["/key"]
@@ -54,4 +55,4 @@ VOLUME ["/key"]
 COPY --from=build /p2pderivatives-oracle/bin/oracle /p2pdoracle/
 
 ENTRYPOINT [ "/p2pdoracle/oracle" ]
-CMD [ "-config", "/config", "-appname", "p2pdoracle", "-e", "integration", "-migrate" ]
+CMD [ "-config", "/config", "-appname", "p2pdoracle", "-e", "default", "-migrate" ]
