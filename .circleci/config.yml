@@ -1,5 +1,12 @@
 version: 2.1
 
+tag_only: &tag_only
+  filters:
+    tags:
+      only: /.*/
+    branches:
+      ignore: /.*/
+
 workflows:
   build-test:
     jobs:
@@ -13,12 +20,18 @@ workflows:
   tagged:
     jobs:
       - packaging:
+          <<: *tag_only
           context: github-packages-docker-credentials
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
+      - hold:
+          <<: *tag_only
+          type: approval
+          requires:
+            - packaging
+      - deploy:
+          <<: *tag_only
+          context: github-packages-docker-credentials
+          requires:
+            - hold
 
 orbs:
   go: circleci/go@1.1.1
@@ -161,3 +174,43 @@ jobs:
           name: Push image to repository
           command: |
             docker push ${DOCKER_HUB_URL}/${IMAGE_REPOSITORY}/${IMAGE_NAME}:${CIRCLE_TAG}
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    environment:
+      DOCKER_HUB_URL: docker.pkg.github.com
+      CD_MACHINE_SSH: circleci@3.115.1.105
+      CD_STACK_NAME: oracle-staging
+      CD_SERVICE_ADDRESS: http://3.115.1.105:443/asset
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "28:6e:e8:c6:7f:02:01:12:7c:3f:f4:6e:a7:42:3f:77"
+      - run:
+          name: Login to docker repository
+          command: |
+            echo "$DOCKER_HUB_PASS" | docker login ${DOCKER_HUB_URL} -u "$DOCKER_HUB_USER" --password-stdin
+      - run:
+          name: Setup remote docker context
+          command: |
+            ssh -o StrictHostKeyChecking=no $CD_MACHINE_SSH '/bin/true' # (docker fails without a known host)
+            docker context create deploy --docker host=ssh://$CD_MACHINE_SSH
+            docker context use deploy
+            docker info
+      - run:
+          name: Update Deployment
+          command: |
+            IMAGE_TAG=${CIRCLE_TAG} \
+            DB_PASSWORD=${CD_DB_PASSWORD} \
+            CRYPTOCOMPARE_APIKEY=${CD_CRYPTOCOMPARE_APIKEY} \
+            docker stack deploy \
+            --compose-file ./deploy/docker-compose.yml \
+            ${CD_STACK_NAME} \
+            --with-registry-auth
+      - run:
+          name: Wait and check service availability
+          command: |
+            sleep 20
+            dockerize -wait ${CD_SERVICE_ADDRESS} -timeout 30s
