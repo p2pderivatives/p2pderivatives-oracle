@@ -32,8 +32,9 @@ type DLCDataResponse struct {
 
 // AssetConfigResponse represents the configuration of an asset api
 type AssetConfigResponse struct {
-	Frequency string `json:"frequency"`
-	RangeD    string `json:"range"`
+	StartDate time.Time `json:"startDate"`
+	Frequency string    `json:"frequency"`
+	RangeD    string    `json:"range"`
 }
 
 // OraclePublicKeyResponse represents the public key of the oracle

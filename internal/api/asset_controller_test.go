@@ -102,6 +102,7 @@ func TestAssetController_GetConfiguration(t *testing.T) {
 	r.ServeHTTP(resp, c.Request)
 	if assert.Equal(t, http.StatusOK, resp.Code) {
 		expected := &api.AssetConfigResponse{
+			StartDate: TestAssetConfig.StartDate,
 			Frequency: "PT1H",
 			RangeD:    "P2DT",
 		}

@@ -62,6 +62,7 @@ func TestGetAssetConfig_WithValidAssets_ReturnsCorrectValue(t *testing.T) {
 			resp, err := req.Get(api.AssetBaseRoute + "/" + asset + api.RouteGETAssetConfig)
 			assert.NoError(t, err)
 			actual := resp.Result().(*api.AssetConfigResponse)
+			assert.Equal(t, expectedConfig.StartDate, actual.StartDate)
 			assert.Equal(t, iso8601.EncodeDuration(expectedConfig.Frequency), actual.Frequency)
 			assert.Equal(t, iso8601.EncodeDuration(expectedConfig.RangeD), actual.RangeD)
 		})

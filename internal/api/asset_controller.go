@@ -57,6 +57,7 @@ func (ct *AssetController) Routes(route *gin.RouterGroup) {
 func (ct *AssetController) GetConfiguration(c *gin.Context) {
 	ginlogrus.SetCtxLoggerHeader(c, "request-header", "Get Asset Configuration")
 	c.JSON(http.StatusOK, &AssetConfigResponse{
+		StartDate: ct.config.StartDate,
 		Frequency: iso8601.EncodeDuration(ct.config.Frequency),
 		RangeD:    iso8601.EncodeDuration(ct.config.RangeD),
 	})
