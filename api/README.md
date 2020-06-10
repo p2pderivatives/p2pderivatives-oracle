@@ -42,6 +42,7 @@ duration: P10DT (= 10 days)
   ```
   ```json
   {
+    "startDate": "2020-01-01T00:00:00Z",
     "frequency": "PT1H",
     "range": "P10DT"
   }
