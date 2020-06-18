@@ -32,9 +32,10 @@ api:
 # to use avoid using cryptocompare
 # use :
 # datafeed:
-#   dummy: true
+#   dummy:
+#     returnValue: <float>
 datafeed:
   cryptoCompare:
     baseUrl: https://min-api.cryptocompare.com/data
-    apiKey: 6c8c899bacde7f54b5e312a862d162c36042669dafdb4c75b87feacc3c70c9c4
-  dummy: true
+  dummy:
+    returnValue: 9000

@@ -182,14 +182,17 @@ func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 
 	// Setup DataFeed service
 	var feedInstance datafeed.DataFeed
-	if config.GetBool("datafeed.dummy") {
-		feedInstance = datafeed.NewDummyDataFeed()
-	} else {
-		feedConfig := &cryptocompare.Config{}
-		config.Sub("datafeed").InitializeComponentConfig(feedConfig)
-		cryptoCompareClient := cryptocompare.NewClient(feedConfig)
+	datafeedConfig := config.Sub("datafeed")
+	dummyFeedConfig := &datafeed.DummyConfig{}
+	err = datafeedConfig.InitializeComponentConfig(dummyFeedConfig)
+	if err != nil {
+		ccFeedConfig := &cryptocompare.Config{}
+		datafeedConfig.InitializeComponentConfig(ccFeedConfig)
+		cryptoCompareClient := cryptocompare.NewClient(ccFeedConfig)
 		cryptoCompareClient.Initialize()
 		feedInstance = cryptoCompareClient
+	} else {
+		feedInstance = datafeed.NewDummyDataFeed(dummyFeedConfig)
 	}
 
 	apiConfig := &api.Config{}

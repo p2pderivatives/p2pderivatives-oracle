@@ -17,7 +17,7 @@ database:
   dbpassword: 1234
 cryptoCompare:
   baseUrl: https://min-api.cryptocompare.com/data
-  apiKey: 6c8c899bacde7f54b5e312a862d162c36042669dafdb4c75b87feacc3c70c9c4
+  # apiKey can be necessary for cryptocompare unit tests
 unittest:
   i: 10
   s: hoge

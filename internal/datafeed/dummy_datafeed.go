@@ -1,27 +1,31 @@
 package datafeed
 
 import (
-	"math/rand"
 	"time"
 )
 
 // NewDummyDataFeed returns a dummy datafeed !
-func NewDummyDataFeed() DataFeed {
-	return &dummyDataFeed{}
+func NewDummyDataFeed(config *DummyConfig) DataFeed {
+	return &dummyDataFeed{
+		config: config,
+	}
 }
 
-type dummyDataFeed struct{}
+type dummyDataFeed struct {
+	config *DummyConfig
+}
 
 func (d *dummyDataFeed) FindCurrentAssetPrice(assetID string, currency string) (*float64, error) {
-	f := randomfloat64()
+	f := d.config.ReturnValue
 	return &f, nil
 }
 
 func (d *dummyDataFeed) FindPastAssetPrice(assetID string, currency string, date time.Time) (*float64, error) {
-	f := randomfloat64()
+	f := d.config.ReturnValue
 	return &f, nil
 }
 
-func randomfloat64() float64 {
-	return rand.Float64()
+// DummyConfig configuration for the dummy Datafeed
+type DummyConfig struct {
+	ReturnValue float64 `configkey:"dummy.returnValue" validate:"required"`
 }
