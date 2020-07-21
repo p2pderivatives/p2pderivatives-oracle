@@ -1,0 +1,9 @@
+server {
+  listen       ${SERVER_PORT} ssl;
+  server_name   ${SERVER_NAME};
+  ssl_certificate     ${CERT_PATH};
+  ssl_certificate_key ${CERT_KEY_PATH};
+  location / {
+    proxy_pass  https://${VIRTUAL_HOST}:${VIRTUAL_PORT};
+  }
+}

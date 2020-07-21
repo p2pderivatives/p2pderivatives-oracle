@@ -182,7 +182,7 @@ jobs:
       DOCKER_HUB_URL: docker.pkg.github.com
       CD_MACHINE_SSH: circleci@3.115.1.105
       CD_STACK_NAME: oracle-staging
-      CD_SERVICE_ADDRESS: http://3.115.1.105:443/asset
+      CD_SERVICE_ADDRESS: https://oracle.p2pderivatives.io/asset
     steps:
       - checkout
       - add_ssh_keys:

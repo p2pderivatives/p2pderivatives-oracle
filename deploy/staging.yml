@@ -1,5 +1,5 @@
 server:
-  address: "0.0.0.0:8080"
+  address: "0.0.0.0:443"
 oracle:
   keyFile: /run/secrets/oracle_key
   keyPass:
