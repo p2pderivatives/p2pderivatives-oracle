@@ -1,0 +1,5 @@
+[tls.stores]
+  [tls.stores.default]
+   [tls.stores.default.defaultCertificate] 
+       certFile = "/ssl/p2pderivatives.io.crt"
+       keyFile = "/ssl/p2pderivatives.io.key"

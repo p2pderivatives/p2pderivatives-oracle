@@ -1,0 +1,40 @@
+version: "3.5"
+services:
+  reverse:
+    image: traefik:v2.2
+    command:
+      - --entrypoints.web-secure.address=:443
+      - --providers.docker=true
+      - --providers.file.directory=/config/
+      - --providers.file.watch=true
+    ports:
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: traefik-config
+        target: /config/traefik.toml
+    secrets:
+      - source: reverse-cert
+        target: /ssl/p2pderivatives.io.crt
+      - source: reverse-key
+        target: /ssl/p2pderivatives.io.key
+    networks:
+      - proxy
+
+secrets:
+  reverse-cert:
+    external: true
+  reverse-key:
+    external: true
+
+configs:
+  traefik-config:
+    external: true
+
+networks:
+  proxy:
+    external: true

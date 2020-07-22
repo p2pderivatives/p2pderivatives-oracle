@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	stdlog "log"
 	"net/http"
@@ -76,6 +75,9 @@ func main() {
 		Handler: routerInstance.GetEngine(),
 	}
 
+	listenAndServe := func() error {
+		return srv.ListenAndServe()
+	}
 	if serverConfig.TLS {
 		certFile := serverConfig.CertFile
 		keyFile := serverConfig.KeyFile
@@ -85,18 +87,16 @@ func main() {
 		if keyFile == "" {
 			log.Fatal("Need to provide the path to the key file")
 		}
-		cer, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			log.Fatalf("Unable to load certificate %v", err)
-			return
+
+		listenAndServe = func() error {
+			return srv.ListenAndServeTLS(certFile, keyFile)
 		}
-		srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
 	}
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := listenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failing to listen: %s\n", err)
 		}
 	}()
