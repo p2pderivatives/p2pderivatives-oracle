@@ -1,11 +1,16 @@
 # meant to be use as docker swarm
 # need to specify the image version tag by using env variable IMAGE_TAG
-version: '3.5'
+version: "3.5"
 services:
   oracle:
     image: docker.pkg.github.com/cryptogarageinc/p2pderivatives-oracle/oracle:${IMAGE_TAG:?}
     labels:
-      image.version: ${IMAGE_TAG:?}
+      - image.version:${IMAGE_TAG:?}
+      - "traefik.http.routers.oracle.tls=true"
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.oracle.rule=Host(`oracle.p2pderivatives.io`)"
+      - "traefik.http.services.oracle.loadbalancer.server.port=8080"
     deploy:
       restart_policy:
         condition: on-failure
@@ -21,13 +26,16 @@ services:
     depends_on:
       - db
     ports:
-      - 443:8080
+      - 8080
     configs:
       - source: oracle
         target: /config/default.yml
     secrets:
       - oracle_key
       - oracle_key_pass
+    networks:
+      - private
+      - proxy
 
   db:
     image: "postgres:12.2"
@@ -49,11 +57,13 @@ services:
       - oracle_db_cert
       - source: oracle_db_key
         target: oracle_db_key
-        uid: '999' # postgres uid guid
-        gid: '999'
+        uid: "999" # postgres uid guid
+        gid: "999"
         mode: 0600
     volumes:
       - db_data:/var/lib/postgresql/data/ # persist data even if container shuts down
+    networks:
+      - private
 
 volumes:
   db_data:
@@ -71,3 +81,8 @@ secrets:
 configs:
   oracle:
     external: true
+
+networks:
+  proxy:
+    external: true
+  private:
