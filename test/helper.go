@@ -1,10 +1,10 @@
 package test
 
 import (
+	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
+	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
+	"github.com/cryptogarageinc/server-common-go/pkg/log"
 	"io/ioutil"
-	conf "p2pderivatives-oracle/internal/configuration"
-	"p2pderivatives-oracle/internal/database/orm"
-	"p2pderivatives-oracle/internal/log"
 	"path/filepath"
 	"runtime"
 )

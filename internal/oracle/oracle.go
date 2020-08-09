@@ -1,8 +1,8 @@
 package oracle
 
 import (
+	"github.com/cryptogarageinc/server-common-go/pkg/utils/file"
 	"p2pderivatives-oracle/internal/dlccrypto"
-	"p2pderivatives-oracle/internal/utils"
 
 	"github.com/pkg/errors"
 )
@@ -40,7 +40,7 @@ func FromConfig(config *Config) (*Oracle, error) {
 		pass = config.KeyPass
 	}
 	if config.KeyPassFile != "" {
-		pass, err = utils.ReadFirstLineFromFile(config.KeyPassFile)
+		pass, err = file.ReadFirstLineFromFile(config.KeyPassFile)
 		if err != nil {
 			return nil, err
 		}

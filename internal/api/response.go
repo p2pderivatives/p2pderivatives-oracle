@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// NewDLCDataReponse transforms a entity.DLCData to dlcData response
-func NewDLCDataReponse(
+// NewDLCDataResponse transforms a entity.DLCData to dlcData response
+func NewDLCDataResponse(
 	oraclePubKey *dlccrypto.PublicKey,
 	dlcData *entity.DLCData) *DLCDataResponse {
 	return &DLCDataResponse{

@@ -2,14 +2,14 @@ package api
 
 import (
 	"fmt"
+	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
+	"github.com/cryptogarageinc/server-common-go/pkg/utils/iso8601"
 	"math"
 	"net/http"
 	"p2pderivatives-oracle/internal/database/entity"
-	"p2pderivatives-oracle/internal/database/orm"
 	"p2pderivatives-oracle/internal/datafeed"
 	"p2pderivatives-oracle/internal/dlccrypto"
 	"p2pderivatives-oracle/internal/oracle"
-	"p2pderivatives-oracle/internal/utils/iso8601"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -87,7 +87,7 @@ func (ct *AssetController) GetAssetRvalue(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, NewDLCDataReponse(oracleInstance.PublicKey, dlcData))
+	c.JSON(http.StatusOK, NewDLCDataResponse(oracleInstance.PublicKey, dlcData))
 }
 
 // GetAssetSignature handler returns the stored signature and asset value related to the asset and time
@@ -158,7 +158,7 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, NewDLCDataReponse(oracleInstance.PublicKey, dlcData))
+	c.JSON(http.StatusOK, NewDLCDataResponse(oracleInstance.PublicKey, dlcData))
 }
 
 func findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.CryptoService, assetID string, publishDate time.Time, config AssetConfig) (*entity.DLCData, error) {

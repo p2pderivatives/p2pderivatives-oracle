@@ -156,7 +156,7 @@ func TestAssetController_GetAssetRvalue_WithExactValidDateInDB_ReturnsCorrectVal
 
 	// assert
 	if assert.Equal(t, http.StatusOK, resp.Code) {
-		expected := api.NewDLCDataReponse(oracleService.PublicKey, InDbDLCData)
+		expected := api.NewDLCDataResponse(oracleService.PublicKey, InDbDLCData)
 		actual := &api.DLCDataResponse{}
 		err := json.Unmarshal([]byte(resp.Body.String()), actual)
 		if assert.NoError(t, err) {
@@ -187,7 +187,7 @@ func TestAssetController_GetAssetRvalue_WithNearValidDateInDB_ReturnsCorrectValu
 
 	// assert
 	if assert.Equal(t, http.StatusOK, resp.Code) {
-		expected := api.NewDLCDataReponse(oracleService.PublicKey, InDbDLCData)
+		expected := api.NewDLCDataResponse(oracleService.PublicKey, InDbDLCData)
 		actual := &api.DLCDataResponse{}
 		err := json.Unmarshal([]byte(resp.Body.String()), actual)
 		if assert.NoError(t, err) {
@@ -314,7 +314,7 @@ func TestAssetController_GetAssetSignature_WithNearValidDateInDB_ReturnsCorrectV
 
 	// assert
 	if assert.Equal(t, http.StatusOK, resp.Code, resp.Body.String()) {
-		expected := api.NewDLCDataReponse(oracleService.PublicKey, InDbDLCData)
+		expected := api.NewDLCDataResponse(oracleService.PublicKey, InDbDLCData)
 		actual := &api.DLCDataResponse{}
 		err := json.Unmarshal([]byte(resp.Body.String()), actual)
 		if assert.NoError(t, err) {

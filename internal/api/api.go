@@ -3,13 +3,14 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"p2pderivatives-oracle/internal/database/orm"
 	"p2pderivatives-oracle/internal/datafeed"
 	"p2pderivatives-oracle/internal/dlccrypto"
-	"p2pderivatives-oracle/internal/log"
-	"p2pderivatives-oracle/internal/middleware"
 	"p2pderivatives-oracle/internal/oracle"
-	"p2pderivatives-oracle/internal/router"
+
+	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
+	"github.com/cryptogarageinc/server-common-go/pkg/log"
+	"github.com/cryptogarageinc/server-common-go/pkg/rest/middleware"
+	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
 
 	"github.com/pkg/errors"
 

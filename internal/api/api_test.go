@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"p2pderivatives-oracle/internal/api"
-	"p2pderivatives-oracle/internal/router"
 	"p2pderivatives-oracle/test"
 	mock_datafeed "p2pderivatives-oracle/test/mock/datafeed"
 	mock_dlccrypto "p2pderivatives-oracle/test/mock/dlccrypto"
 	"testing"
+
+	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
 
 	"github.com/stretchr/testify/assert"
 
