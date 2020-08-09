@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 	"p2pderivatives-oracle/internal/api"
-	conf "p2pderivatives-oracle/internal/configuration"
+	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
 	"p2pderivatives-oracle/internal/oracle"
 	"path/filepath"
 	"runtime"
