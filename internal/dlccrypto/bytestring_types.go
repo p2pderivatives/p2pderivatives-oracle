@@ -8,8 +8,8 @@ import (
 
 const (
 	sizePrivateKey = 32
-	sizePublicKey  = 33
-	sizeSignature  = 32
+	sizePublicKey  = 32
+	sizeSignature  = 64
 )
 
 // ErrInvalidBytestringSize represents a bytestring of wrong length for the struct type used
@@ -51,8 +51,8 @@ type PrivateKey struct {
 	ByteString
 }
 
-// NewPublicKey returns a new PublicKey instance
-func NewPublicKey(bytestring string) (*PublicKey, error) {
+// NewSchnorrPublicKey returns a new PublicKey instance
+func NewSchnorrPublicKey(bytestring string) (*SchnorrPublicKey, error) {
 	bt, err := NewByteString(bytestring)
 	if err != nil {
 		return nil, err
@@ -60,11 +60,11 @@ func NewPublicKey(bytestring string) (*PublicKey, error) {
 	if len(bt.bytes) != sizePublicKey {
 		return nil, invalidSizeError("PublicKey", sizePublicKey)
 	}
-	return &PublicKey{*bt}, nil
+	return &SchnorrPublicKey{*bt}, nil
 }
 
-// PublicKey represents a compressed public key
-type PublicKey struct {
+// SchnorrPublicKey represents a compressed public key
+type SchnorrPublicKey struct {
 	ByteString
 }
 

@@ -1,4 +1,4 @@
-ARG ARG_CFD_GO_VERSION=0.1.21
+ARG ARG_CFD_GO_VERSION=0.2.3
 ARG CFD_GO_ZIP=cfdgo-v${ARG_CFD_GO_VERSION}-alpine_x86_64.zip
 FROM golang:1.14-alpine as dev
 RUN apk update
@@ -13,7 +13,7 @@ ARG ARG_CFD_GO_VERSION
 ARG CFD_GO_ZIP
 ENV CFD_GO_VERSION=${ARG_CFD_GO_VERSION}
 RUN wget -O /${CFD_GO_ZIP} https://github.com/cryptogarageinc/cfd-go/releases/download/v${CFD_GO_VERSION}/${CFD_GO_ZIP} \
-     && unzip -q /${CFD_GO_ZIP} -d /
+    && unzip -q /${CFD_GO_ZIP} -d /
 
 COPY go.mod .
 COPY go.sum .

@@ -10,14 +10,14 @@ import (
 // Oracle represents an oracle with private key, public key pair
 type Oracle struct {
 	PrivateKey *dlccrypto.PrivateKey
-	PublicKey  *dlccrypto.PublicKey
+	PublicKey  *dlccrypto.SchnorrPublicKey
 }
 
 // New returns a new Oracle instance
 // the public key will be calculated from the private key
 func New(privateKey *dlccrypto.PrivateKey) (*Oracle, error) {
 	cryptoService := dlccrypto.NewCfdgoCryptoService()
-	publicKey, err := cryptoService.PublicKeyFromPrivateKey(privateKey)
+	publicKey, err := cryptoService.SchnorrPublicKeyFromPrivateKey(privateKey)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Could not recover Oracle Public Key")
 	}

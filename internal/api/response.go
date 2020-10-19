@@ -8,7 +8,7 @@ import (
 
 // NewDLCDataResponse transforms a entity.DLCData to dlcData response
 func NewDLCDataResponse(
-	oraclePubKey *dlccrypto.PublicKey,
+	oraclePubKey *dlccrypto.SchnorrPublicKey,
 	dlcData *entity.DLCData) *DLCDataResponse {
 	return &DLCDataResponse{
 		OraclePublicKey: oraclePubKey.EncodeToString(),

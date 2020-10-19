@@ -56,18 +56,18 @@ const datafeedValue = 100.06
 
 var TestResponseValues = &ResponseValue{
 	AssetID:   TestAsset.AssetID,
-	Kvalue:    "71957542da5ea5e6b58607a3e21f0eb4e871c785b5b3470fb5274213f050cd60",
-	Rvalue:    "02d7e8908aa101d0f7d3565fff11629d3b8fe0a7c431ad336e07de062df5053d6a",
+	Kvalue:    "d1e3dcdda619833ec2b91d4fd304e9be0ad85326c9f524dfbc53f443ab54063e",
+	Rvalue:    "44b1350439fc9a098db6edd5bd417eb1aeaa17ec60f9e5a799605feebd5c19eb",
 	Value:     fmt.Sprintf("%d", int(math.Round(datafeedValue))),
-	Signature: "26772fddf151463655823c906d1c01afb682b8c3533589fe71753a579bf59b22",
+	Signature: "44b1350439fc9a098db6edd5bd417eb1aeaa17ec60f9e5a799605feebd5c19ebf742bea67ff64f738c0426d04a22b30fe61258e074c0c90a1b13ce29d11f4b67",
 }
 
-func SetupMockValues() (*dlccrypto.PrivateKey, *dlccrypto.PublicKey, *dlccrypto.Signature, *float64, error) {
+func SetupMockValues() (*dlccrypto.PrivateKey, *dlccrypto.SchnorrPublicKey, *dlccrypto.Signature, *float64, error) {
 	kvalue, err := dlccrypto.NewPrivateKey(TestResponseValues.Kvalue)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	rvalue, err := dlccrypto.NewPublicKey(TestResponseValues.Rvalue)
+	rvalue, err := dlccrypto.NewSchnorrPublicKey(TestResponseValues.Rvalue)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -216,8 +216,7 @@ func TestAssetController_GetAssetRvalue_NotInDB_ReturnsCorrectValue(t *testing.T
 	}
 
 	crypto := mock_dlccrypto.NewMockCryptoService(ctrl)
-	crypto.EXPECT().GenerateKvalue().Return(kvalue, nil)
-	crypto.EXPECT().ComputeRvalue(kvalue).Return(rvalue, nil)
+	crypto.EXPECT().GenerateSchnorrKeyPair().Return(kvalue, rvalue, nil)
 
 	oracleService, err := NewTestOracleService()
 	if err != nil {
@@ -268,8 +267,7 @@ func TestAssetController_GetAssetSignature_NotInDB_ReturnsCorrectValue(t *testin
 		feed.EXPECT().FindPastAssetPrice("btc", "usd", expectedDate).Return(sigValue, nil)
 		// mock crypto
 		crypto := mock_dlccrypto.NewMockCryptoService(ctrl)
-		crypto.EXPECT().GenerateKvalue().Return(kvalue, nil)
-		crypto.EXPECT().ComputeRvalue(kvalue).Return(rvalue, nil)
+		crypto.EXPECT().GenerateSchnorrKeyPair().Return(kvalue, rvalue, nil)
 		crypto.EXPECT().ComputeSchnorrSignature(
 			oracleInstance.PrivateKey,
 			kvalue,
