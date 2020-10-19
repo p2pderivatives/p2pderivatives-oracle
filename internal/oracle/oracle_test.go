@@ -18,7 +18,7 @@ var ExpectedKeyPair = struct {
 	passPath   string
 }{
 	privateKey: "c85c333c73eb6daf3479d0236b261d7512cb5daf6955beea5d66a180d34260ae",
-	publicKey:  "03d557c15ea53c46245be38a062e33c22c5880f6b776e36695befc6e28a3934bef",
+	publicKey:  "d557c15ea53c46245be38a062e33c22c5880f6b776e36695befc6e28a3934bef",
 	password:   "XqH/LtBBrBJ/iSSxx5gejDAwA3nbiIGBV0w/SqGnPXc=",
 	keyPath:    filepath.Join(test.VectorsDirectoryPath, "oracle/key.pem"),
 	passPath:   filepath.Join(test.VectorsDirectoryPath, "oracle/pass.txt"),

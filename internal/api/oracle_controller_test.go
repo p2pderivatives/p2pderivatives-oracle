@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const OraclePrivateKey = "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
-const OraclePublicKey = "0250863ad64a87ae8a2fe83c1af1a8403cb53f53e486d8511dad8a04887e5b2352"
+const OraclePrivateKey = "29cf848088781119018ba61f14b5328c9c299050e61abb9438cd77b81aacd73b"
+const OraclePublicKey = "c06fd4dee6502848b937840019effbab0856a227d984785367b079969471a6ed"
 
 func NewTestOracleService() (*oracle.Oracle, error) {
 	priv, err := dlccrypto.NewPrivateKey(OraclePrivateKey)

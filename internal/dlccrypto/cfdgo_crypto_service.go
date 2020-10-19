@@ -2,7 +2,6 @@ package dlccrypto
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 
 	cfdgo "github.com/cryptogarageinc/cfd-go"
 	"github.com/pkg/errors"
@@ -10,45 +9,43 @@ import (
 
 // NewCfdgoCryptoService returns a CryptoService implemented using cfd-go library
 func NewCfdgoCryptoService() CryptoService {
-	return &CfdgoCryptoService{}
+	schnorrUtil := cfdgo.NewSchnorrUtil()
+	return &CfdgoCryptoService{schnorrUtil}
 }
 
 // CfdgoCryptoService crypto service implementing the schnorr api of cfd-go library
-type CfdgoCryptoService struct{}
-
-// ComputeRvalue computes a public nonce from a kvalue private key
-func (o *CfdgoCryptoService) ComputeRvalue(nonce *PrivateKey) (*PublicKey, error) {
-	rvalue, err := cfdgo.CfdGoGetSchnorrPublicNonce(nonce.EncodeToString())
-	if err != nil {
-		return nil, errors.WithMessage(err, "Error while computing rvalue")
-	}
-	pubkey, err := NewPublicKey(rvalue)
-	if err != nil {
-		return nil, err
-	}
-	return pubkey, nil
+type CfdgoCryptoService struct {
+	schnorrUtil *cfdgo.SchnorrUtil
 }
 
-// GenerateKvalue generate a new unique K value to be used with schnorr signature
-func (o *CfdgoCryptoService) GenerateKvalue() (*PrivateKey, error) {
-	_, key, _, err := cfdgo.CfdGoCreateKeyPair(true, 0)
+// GenerateSchnorrKeyPair returns a freshly generated Schnorr public/private key pair
+func (o *CfdgoCryptoService) GenerateSchnorrKeyPair() (*PrivateKey, *SchnorrPublicKey, error) {
+	_, seckey, _, err := cfdgo.CfdGoCreateKeyPair(true, 0)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Error while generating one time signing K")
+		return nil, nil, errors.WithMessage(err, "Error while generating cfd go key pair")
 	}
-	kvalue, err := NewPrivateKey(key)
+
+	privkey, err := NewPrivateKey(seckey)
 	if err != nil {
-		return nil, err
+		return nil, nil, errors.WithMessage(err, "Error while generating private key")
 	}
-	return kvalue, nil
+
+	pubkey, err := o.SchnorrPublicKeyFromPrivateKey(privkey)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return privkey, pubkey, nil
 }
 
-// PublicKeyFromPrivateKey computes public key from private key
-func (o *CfdgoCryptoService) PublicKeyFromPrivateKey(privateKey *PrivateKey) (*PublicKey, error) {
-	bs, err := cfdgo.CfdGoGetPubkeyFromPrivkey(privateKey.EncodeToString(), "", true)
+// SchnorrPublicKeyFromPrivateKey computes a Schnorr public key from a private key
+func (o *CfdgoCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *PrivateKey) (*SchnorrPublicKey, error) {
+	bs, err := o.schnorrUtil.GetPubkeyFromPrivkey(cfdgo.NewByteData(privateKey.bytes))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error while calculating public key from private key")
 	}
-	pubkey, err := NewPublicKey(bs)
+	pubkey, err := NewSchnorrPublicKey(bs.ToHex())
 	if err != nil {
 		return nil, err
 	}
@@ -57,24 +54,23 @@ func (o *CfdgoCryptoService) PublicKeyFromPrivateKey(privateKey *PrivateKey) (*P
 
 // ComputeSchnorrSignature computes a schnorr signature on the given message (will be hashed by sha256)
 func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *PrivateKey, kvalue *PrivateKey, message string) (*Signature, error) {
-	hash32 := sha256.Sum256([]byte(message))
-	hash := hex.EncodeToString(hash32[:])
-	bs, err := cfdgo.CfdGoCalculateSchnorrSignatureWithNonce(privateKey.EncodeToString(), kvalue.EncodeToString(), hash)
+	hash := sha256.Sum256([]byte(message))
+
+	bs, err := o.schnorrUtil.SignWithNonce(cfdgo.NewByteData(hash[:]), cfdgo.NewByteData(privateKey.bytes), cfdgo.NewByteData(kvalue.bytes))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error while computing schnorr signature")
 	}
-	sig, err := NewSignature(bs)
+	sig, err := NewSignature(bs.ToHex())
 	if err != nil {
 		return nil, err
 	}
 	return sig, nil
 }
 
-// VerifySchnorrSignature verifies the schnorr signature against public key and rvalue on the given message (will be hashed by sha256)
-func (o *CfdgoCryptoService) VerifySchnorrSignature(publicKey *PublicKey, rvalue *PublicKey, signature *Signature, message string) (bool, error) {
-	hash32 := sha256.Sum256([]byte(message))
-	hash := hex.EncodeToString(hash32[:])
-	ok, err := cfdgo.CfdGoVerifySchnorrSignatureWithNonce(publicKey.EncodeToString(), rvalue.EncodeToString(), signature.EncodeToString(), hash)
+// VerifySchnorrSignature verifies the schnorr signature against a given public key on the given message (will be hashed with sha256)
+func (o *CfdgoCryptoService) VerifySchnorrSignature(publicKey *SchnorrPublicKey, signature *Signature, message string) (bool, error) {
+	hash := sha256.Sum256([]byte(message))
+	ok, err := o.schnorrUtil.Verify(cfdgo.NewByteData(signature.bytes), cfdgo.NewByteData(hash[:]), cfdgo.NewByteData(publicKey.bytes))
 	if err != nil {
 		return false, errors.WithMessage(err, "Error while verifying schnorr signature")
 	}

@@ -173,11 +173,7 @@ func findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.Cry
 	// if record is not found, need to create the record in db
 	if err != nil && gorm.IsRecordNotFoundError(err) {
 		logger.Debug("Generating new DLC data Rvalue")
-		signingK, err := oracle.GenerateKvalue()
-		if err != nil {
-			return nil, NewUnknownCryptoServiceError(err)
-		}
-		rvalue, err := oracle.ComputeRvalue(signingK)
+		signingK, rvalue, err := oracle.GenerateSchnorrKeyPair()
 		if err != nil {
 			return nil, NewUnknownCryptoServiceError(err)
 		}
