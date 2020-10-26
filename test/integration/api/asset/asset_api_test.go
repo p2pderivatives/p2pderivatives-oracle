@@ -8,10 +8,11 @@ import (
 	"os"
 	"p2pderivatives-oracle/internal/api"
 	"p2pderivatives-oracle/internal/dlccrypto"
-	"github.com/cryptogarageinc/server-common-go/pkg/utils/iso8601"
 	helper "p2pderivatives-oracle/test/integration"
 	"testing"
 	"time"
+
+	"github.com/cryptogarageinc/server-common-go/pkg/utils/iso8601"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -121,7 +122,7 @@ func TestGetAssetRvalue_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 
 			assertSub.Equal(asset, actual.AssetID)
 			assertPublishedDate(assertSub, requestedDate, actual.PublishedDate, config.Frequency)
-			_, err = dlccrypto.NewPublicKey(actual.Rvalue)
+			_, err = dlccrypto.NewSchnorrPublicKey(actual.Rvalue)
 			assertSub.NoError(err)
 		})
 	}
@@ -191,13 +192,10 @@ func assertPublishedDate(
 }
 
 func assertSignature(assertSub *assert.Assertions, rvalueHex string, sigHex string, message string) bool {
-	rvalue, err := dlccrypto.NewPublicKey(rvalueHex)
-	assertSub.NoError(err)
 	sig, err := dlccrypto.NewSignature(sigHex)
 	assertSub.NoError(err)
 	isValidSignature, err := dlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
 		helper.ExpectedOracle.PublicKey,
-		rvalue,
 		sig,
 		message)
 	assertSub.NoError(err)
