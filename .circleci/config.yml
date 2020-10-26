@@ -180,7 +180,6 @@ jobs:
       - image: cimg/base:stable
     environment:
       DOCKER_HUB_URL: docker.pkg.github.com
-      CD_MACHINE_SSH: circleci@3.115.1.105
       CD_STACK_NAME: oracle-staging
       CD_SERVICE_ADDRESS: https://oracle.p2pderivatives.io/asset
     steps:
@@ -195,8 +194,8 @@ jobs:
       - run:
           name: Setup remote docker context
           command: |
-            ssh -o StrictHostKeyChecking=no $CD_MACHINE_SSH '/bin/true' # (docker fails without a known host)
-            docker context create deploy --docker host=ssh://$CD_MACHINE_SSH
+            ssh -o StrictHostKeyChecking=no $CI_PROJECT_CD_MACHINE_SSH '/bin/true' # (docker fails without a known host)
+            docker context create deploy --docker host=ssh://$CI_PROJECT_CD_MACHINE_SSH
             docker context use deploy
             docker info
       - run:
