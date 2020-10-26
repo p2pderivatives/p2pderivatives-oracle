@@ -32,7 +32,7 @@ func TestGetOraclePublicKey_Returns_CorrectValue(t *testing.T) {
 	actual := &api.OraclePublicKeyResponse{}
 	err = json.Unmarshal(resp.Body(), actual)
 	assert.NoError(t, err)
-	actualPubkey, err := dlccrypto.NewPublicKey(actual.PublicKey)
+	actualPubkey, err := dlccrypto.NewSchnorrPublicKey(actual.PublicKey)
 	assert.NoError(t, err)
 	assert.Equal(t, helper.ExpectedOracle.PublicKey, actualPubkey)
 }
