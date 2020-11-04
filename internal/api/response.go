@@ -14,9 +14,9 @@ func NewDLCDataResponse(
 		OraclePublicKey: oraclePubKey.EncodeToString(),
 		PublishedDate:   dlcData.PublishedDate,
 		AssetID:         dlcData.AssetID,
-		Rvalue:          dlcData.Rvalue,
-		Signature:       dlcData.Signature,
-		Value:           dlcData.Value,
+		Rvalues:         dlcData.Rvalues,
+		Signatures:      dlcData.Signatures,
+		Values:          dlcData.Values,
 	}
 }
 
@@ -25,9 +25,9 @@ type DLCDataResponse struct {
 	OraclePublicKey string    `json:"oraclePublicKey"`
 	PublishedDate   time.Time `json:"publishDate"`
 	AssetID         string    `json:"asset"`
-	Rvalue          string    `json:"rvalue"`
-	Signature       string    `json:"signature,omitempty"`
-	Value           string    `json:"value,omitempty"`
+	Rvalues         []string  `json:"rvalues"`
+	Signatures      []string  `json:"signatures,omitempty"`
+	Values          []string  `json:"values,omitempty"`
 }
 
 // AssetConfigResponse represents the configuration of an asset api

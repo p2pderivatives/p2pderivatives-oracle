@@ -1,40 +1,73 @@
 package entity
 
 import (
+	"database/sql/driver"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // DLCData represents the db model of the oracle data rvalue/signature relative an asset
 type DLCData struct {
 	Base
-	PublishedDate time.Time `gorm:"primary_key"`
-	AssetID       string    `gorm:"primary_key"`
-	Rvalue        string    `gorm:"unique;not null"`
-	Signature     string
-	Value         string
+	PublishedDate time.Time   `gorm:"primary_key"`
+	AssetID       string      `gorm:"primary_key"`
+	Rvalues       StringArray `gorm:"not null"`
+	Signatures    StringArray
+	Values        StringArray
 	Asset         Asset `gorm:"foreignkey:AssetID" json:"-"`
 
 	// TODO should be stored somewhere secure
-	Kvalue string `gorm:"unique;not null" json:"-"`
+	Kvalues StringArray `gorm:"not null" json:"-"`
+}
+
+// StringArray is an alias type for an array of strings
+type StringArray []string
+
+// Scan implements the Scanner interface for gorm custom types
+func (s *StringArray) Scan(value interface{}) error {
+	csv, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("Failed to unmarshal string value: %v", value)
+	}
+
+	*s = strings.Split(csv, ",")
+
+	return nil
+}
+
+// Value implements the Valuer interface for gorm custom types
+func (s StringArray) Value() (driver.Value, error) {
+	if s == nil || len(s) == 0 {
+		return nil, nil
+	}
+	return strings.Join(s, ","), nil
+}
+
+// GormDataType implements the GormDataTypeInterface for gorm custom types
+func (StringArray) GormDataType() string {
+	return "text"
 }
 
 // IsSigned returns true if the Signature is set
 func (m *DLCData) IsSigned() bool {
-	return m.Signature != ""
+	return len(m.Signatures) > 0
 }
 
 // CreateDLCData will try to create a DLCData with a new Rvalue corresponding to an asset and publishDate
 // if already in db, it will return the value found with no error
-func CreateDLCData(db *gorm.DB, assetID string, publishDate time.Time, signingk string, rvalue string) (*DLCData, error) {
+func CreateDLCData(db *gorm.DB, assetID string, publishDate time.Time, signingks []string, rvalues []string) (*DLCData, error) {
 	tx := db.Begin()
 
 	newDLCData := &DLCData{
 		PublishedDate: publishDate,
 		AssetID:       assetID,
-		Kvalue:        signingk,
-		Rvalue:        rvalue,
+		Kvalues:       signingks,
+		Rvalues:       rvalues,
 	}
 
 	tx = tx.Create(newDLCData)
@@ -101,21 +134,24 @@ func FindDLCDataPublishedAt(db *gorm.DB, assetID string, publishDate time.Time) 
 
 // UpdateDLCDataSignatureAndValue will try to update signature and value of the DLCData if it exists
 // and if the DLCdata is not already signed
-func UpdateDLCDataSignatureAndValue(db *gorm.DB, assetID string, publishDate time.Time, sig string, value string) (*DLCData, error) {
-	tx := db.Begin()
+func UpdateDLCDataSignatureAndValue(db *gorm.DB, assetID string, publishDate time.Time, sigs []string, values []string) (*DLCData, error) {
 	filterCondition := &DLCData{
 		AssetID:       assetID,
 		PublishedDate: publishDate,
 	}
-	tx = tx.Model(filterCondition)
-	// ensure that the signature and value are empty, doesn't work in using filterCondition (ignored)
-	tx = tx.Where("signature = ?", "").Where("value = ?", "")
+	db.Logger.LogMode(logger.Info)
+	tx := db.Begin()
+	tx = tx.Where(filterCondition)
 
-	tx = tx.Updates(DLCData{Signature: sig, Value: value})
-	if err := tx.Error; err != nil {
+	var old DLCData
+	tx.First(&old)
+
+	if old.Signatures != nil || old.Values != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errors.New("Already signed or assigned values")
 	}
+
+	tx = tx.Updates(DLCData{Signatures: sigs, Values: values})
 
 	if tx.RowsAffected == 0 {
 		tx.Rollback()
