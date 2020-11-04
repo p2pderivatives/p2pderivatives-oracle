@@ -24,10 +24,20 @@ api:
       startDate: 2020-01-01T00:00:00Z
       frequency: PT1H
       range: P2MT
+      unit: usd/btc
+      precision: 0
+      signconfig:
+        base: 2
+        nbDigits: 20
     btcjpy:
       startDate: 2020-01-01T00:00:00Z
       frequency: PT1H
       range: P2MT
+      unit: jpy/btc
+      precision: 0
+      signconfig:
+        base: 2
+        nbDigits: 20
 datafeed:
   cryptoCompare:
     baseUrl: https://min-api.cryptocompare.com/data

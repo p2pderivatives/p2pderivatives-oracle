@@ -87,3 +87,9 @@ func TestOracleAPI_FinalizeServices_NoError(t *testing.T) {
 	err = oracleApi.FinalizeServices()
 	assert.NoError(t, err)
 }
+
+func TestAPIConfig_Initialize_NoError(t *testing.T) {
+	apiConfig := &api.Config{}
+	err := test.InitializeConfig(apiConfig)
+	assert.NoError(t, err)
+}

@@ -40,9 +40,10 @@ func concurrentTestBase(
 	repeatRequestCounter int,
 	assets map[string]api.AssetConfig,
 	routeBuilder func(string, time.Time) string,
-	extraCheck func(*assert.Assertions, *api.DLCDataResponse) bool,
-	computeDuration func(dur time.Duration, config api.AssetConfig) time.Duration) {
-	apiResults := map[string]*api.DLCDataResponse{}
+	extraCheck func(*assert.Assertions, interface{}) bool,
+	computeDuration func(dur time.Duration, config api.AssetConfig) time.Duration,
+	result interface{}) {
+	apiResults := map[string]interface{}{}
 
 	for asset, config := range assets {
 		t.Run(fmt.Sprintf("asset %s", asset), func(subT *testing.T) {
@@ -56,7 +57,7 @@ func concurrentTestBase(
 				route := routeBuilder(asset, requestedDate)
 				for i := 0; i < repeatRequestCounter; i++ {
 					client := helper.CreateDefaultClient()
-					req := client.R().SetResult(&api.DLCDataResponse{})
+					req := client.R().SetResult(result)
 					handler.RegisterRequest(req, resty.MethodGet, route)
 				}
 			}
@@ -69,11 +70,10 @@ func concurrentTestBase(
 				if assertSub.NoError(r.Error, "Error while sending the request") {
 					resp := r.Response
 					if assertSub.Equal(http.StatusOK, resp.StatusCode(), resp.String()) {
-						actual := resp.Result().(*api.DLCDataResponse)
+						actual := resp.Result()
 						if val, ok := apiResults[resp.Request.URL]; ok {
 							assertSub.Equal(val, actual)
 						} else {
-							assertSub.Equal(asset, actual.AssetID)
 							extraCheck(assertSub, actual)
 							apiResults[resp.Request.URL] = actual
 						}
@@ -85,7 +85,7 @@ func concurrentTestBase(
 
 }
 
-func dummyCheck(t *assert.Assertions, resp *api.DLCDataResponse) bool {
+func dummyCheck(t *assert.Assertions, resp interface{}) bool {
 	return true
 }
 
@@ -97,14 +97,20 @@ func signatureDuration(dur time.Duration, config api.AssetConfig) time.Duration 
 	return -(config.Frequency + dur)
 }
 
+func signatureCheck(t *assert.Assertions, resp interface{}) bool {
+	attestation, ok := resp.(*api.OracleAttestation)
+	t.True(ok)
+	return assertSignature(t, attestation.Signatures, attestation.Values)
+}
+
 func TestGetAssetRvalue_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 	t.Parallel()
 
-	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetRvalue, dummyCheck, dummyDuration)
+	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetAnnouncement, dummyCheck, dummyDuration, &api.OracleAnnouncement{})
 }
 
 func TestGetAssetSignature_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 	t.Parallel()
 
-	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetSignature, assertSignature, signatureDuration)
+	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetAttestation, signatureCheck, signatureDuration, &api.OracleAttestation{})
 }
