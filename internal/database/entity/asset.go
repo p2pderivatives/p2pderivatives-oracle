@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Asset represents an asset currency

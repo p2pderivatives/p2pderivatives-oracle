@@ -206,7 +206,7 @@ func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 
 func doMigration(o *orm.ORM) error {
 	db := o.GetDB()
-	err := db.AutoMigrate(&entity.Asset{}, &entity.DLCData{}).Error
+	err := db.AutoMigrate(&entity.Asset{}, &entity.DLCData{})
 	err = db.Create(&entity.Asset{AssetID: "btcusd", Description: "BTC USD"}).Error
 	err = db.Create(&entity.Asset{AssetID: "btcjpy", Description: "BTC JPY"}).Error
 	return err

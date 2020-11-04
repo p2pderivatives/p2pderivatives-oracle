@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // DLCData represents the db model of the oracle data rvalue/signature relative an asset
@@ -14,7 +14,7 @@ type DLCData struct {
 	Rvalue        string    `gorm:"unique;not null"`
 	Signature     string
 	Value         string
-	Asset         Asset `gorm:"association_foreignkey:AssetID" json:"-"`
+	Asset         Asset `gorm:"foreignkey:AssetID" json:"-"`
 
 	// TODO should be stored somewhere secure
 	Kvalue string `gorm:"unique;not null" json:"-"`
@@ -92,7 +92,7 @@ func FindDLCDataPublishedAt(db *gorm.DB, assetID string, publishDate time.Time) 
 		AssetID:       assetID,
 		PublishedDate: publishDate,
 	}
-	err := db.Where(filterCondition).Find(dlcData).Error
+	err := db.Where(filterCondition).First(dlcData).Error
 	if err != nil {
 		return nil, err
 	}
