@@ -5,7 +5,7 @@ import (
 	"p2pderivatives-oracle/test"
 	"testing"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"github.com/stretchr/testify/assert"
 )

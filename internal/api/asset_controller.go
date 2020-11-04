@@ -2,8 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
-	"github.com/cryptogarageinc/server-common-go/pkg/utils/iso8601"
 	"math"
 	"net/http"
 	"p2pderivatives-oracle/internal/database/entity"
@@ -12,13 +10,16 @@ import (
 	"p2pderivatives-oracle/internal/oracle"
 	"time"
 
+	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
+	"github.com/cryptogarageinc/server-common-go/pkg/utils/iso8601"
+
 	"github.com/sirupsen/logrus"
 
 	ginlogrus "github.com/Bose/go-gin-logrus"
 	"github.com/pkg/errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -166,12 +167,12 @@ func findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.Cry
 	if err == nil {
 		logger.Debug("Found a matching DLC Data in db")
 	}
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, NewUnknownDBError(err)
 	}
 
 	// if record is not found, need to create the record in db
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Debug("Generating new DLC data Rvalue")
 		signingK, rvalue, err := oracle.GenerateSchnorrKeyPair()
 		if err != nil {
