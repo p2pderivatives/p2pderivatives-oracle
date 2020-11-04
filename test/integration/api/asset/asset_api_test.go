@@ -84,7 +84,7 @@ func TestGetAssetConfig_WithInValidAssets_Returns404NotFound(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode())
 }
 
-func TestGetAssetRvalue_WithTimeNotInRange_ReturnsCorrectErrorResponse(t *testing.T) {
+func TestGetAssetAnnouncement_WithTimeNotInRange_ReturnsCorrectErrorResponse(t *testing.T) {
 	for asset, config := range helper.APIConfig.AssetConfigs {
 		t.Run(fmt.Sprintf("asset %s", asset), func(t *testing.T) {
 			// arrange
@@ -93,7 +93,7 @@ func TestGetAssetRvalue_WithTimeNotInRange_ReturnsCorrectErrorResponse(t *testin
 			requestedDate := Now.Add(config.RangeD + 30*time.Minute)
 
 			// act
-			resp, err := req.Get(GetRouteAssetRvalue(asset, requestedDate))
+			resp, err := req.Get(GetRouteAssetAnnouncement(asset, requestedDate))
 
 			// assert
 			assert.NoError(t, err)
@@ -104,51 +104,51 @@ func TestGetAssetRvalue_WithTimeNotInRange_ReturnsCorrectErrorResponse(t *testin
 	}
 }
 
-func TestGetAssetRvalue_WithValidTime_ReturnsCorrectValue(t *testing.T) {
+func TestGetAssetAnnouncement_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 	for asset, config := range helper.APIConfig.AssetConfigs {
 		t.Run(fmt.Sprintf("asset %s", asset), func(subT *testing.T) {
 			assertSub := assert.New(subT)
 			// arrange
 			client := helper.CreateDefaultClient()
-			req := client.R().SetResult(&api.DLCDataResponse{})
+			req := client.R().SetResult(&api.OracleAnnouncement{})
 			requestedDate := Now.Add(30 * time.Minute)
 
 			// act
-			resp, err := req.Get(GetRouteAssetRvalue(asset, requestedDate))
+			resp, err := req.Get(GetRouteAssetAnnouncement(asset, requestedDate))
 
 			// assert
 			assertSub.NoError(err)
 			assertSub.Equal(http.StatusOK, resp.StatusCode())
-			actual := resp.Result().(*api.DLCDataResponse)
+			actual := resp.Result().(*api.OracleAnnouncement)
 
-			assertSub.Equal(asset, actual.AssetID)
-			assertPublishedDate(assertSub, requestedDate, actual.PublishedDate, config.Frequency)
-			_, err = dlccrypto.NewSchnorrPublicKey(actual.Rvalue)
-			assertSub.NoError(err)
+			assertSub.Equal(config.SignConfig.Base, actual.OracleEvent.EventDescriptor.Base)
+			assertPublishedDate(assertSub, requestedDate, actual.OracleEvent.EventMaturity, config.Frequency)
+			for _, rValue := range actual.OracleEvent.Nonces {
+				_, err = dlccrypto.NewSchnorrPublicKey(rValue)
+				assertSub.NoError(err)
+			}
 		})
 	}
 }
 
-func TestGetAssetSignature_ReturnsCorrectValue(t *testing.T) {
+func TestGetAssetAttestation_ReturnsCorrectValue(t *testing.T) {
 	for asset, config := range helper.APIConfig.AssetConfigs {
 		t.Run(fmt.Sprintf("asset %s", asset), func(subT *testing.T) {
 			assertSub := assert.New(subT)
 			// arrange
 			client := helper.CreateDefaultClient()
-			req := client.R().SetResult(&api.DLCDataResponse{})
+			req := client.R().SetResult(&api.OracleAttestation{})
 			requestedDate := Now.Add(-(config.Frequency + config.Frequency/2))
 
 			// act
-			resp, err := req.Get(GetRouteAssetSignature(asset, requestedDate))
+			resp, err := req.Get(GetRouteAssetAttestation(asset, requestedDate))
 
 			// assert
 			assertSub.NoError(err)
 			if assertSub.Equal(http.StatusOK, resp.StatusCode(), resp.String()) {
-				actual := resp.Result().(*api.DLCDataResponse)
+				actual := resp.Result().(*api.OracleAttestation)
 
-				assertSub.Equal(asset, actual.AssetID)
-				assertPublishedDate(assertSub, requestedDate, actual.PublishedDate, config.Frequency)
-				assertSignature(assertSub, actual)
+				assertSignature(assertSub, actual.Signatures, actual.Values)
 			}
 		})
 	}
@@ -163,7 +163,7 @@ func TestGetAssetSignature_WithFutureTime_ReturnsError(t *testing.T) {
 			requestedDate := Now.Add(time.Hour)
 
 			// act
-			resp, err := req.Get(GetRouteAssetSignature(asset, requestedDate))
+			resp, err := req.Get(GetRouteAssetAttestation(asset, requestedDate))
 
 			// assert
 			assert.NoError(t, err)
@@ -192,19 +192,23 @@ func assertPublishedDate(
 		publishedDate)
 }
 
-func assertSignature(assertSub *assert.Assertions, resp *api.DLCDataResponse) bool {
-	sig, err := dlccrypto.NewSignature(resp.Signature)
-	assertSub.NoError(err)
-	isValidSignature, err := cfddlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
-		helper.ExpectedOracle.PublicKey,
-		sig,
-		resp.Value)
-	assertSub.NoError(err)
-	return assertSub.True(
-		isValidSignature,
-		"Signature %v does not match using oracle public key: %s rvalue:　%s message: %s",
-		sig,
-		helper.ExpectedOracle.PublicKey.EncodeToString(),
-		resp.Rvalue,
-		resp.Signature)
+func assertSignature(assertSub *assert.Assertions, sigsHex []string, messages []string) bool {
+	ok := true
+	for i := 0; i < len(sigsHex); i++ {
+		sig, err := dlccrypto.NewSignature(sigsHex[i])
+		assertSub.NoError(err)
+		isValidSignature, err := cfddlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
+			helper.ExpectedOracle.PublicKey,
+			sig,
+			messages[i])
+		assertSub.NoError(err)
+		ok = ok && assertSub.True(
+			isValidSignature,
+			"Signature %v does not match using oracle public key: %s rvalue:　%s message: %s",
+			sig,
+			helper.ExpectedOracle.PublicKey.EncodeToString(),
+			sigsHex[i])
+	}
+
+	return ok
 }

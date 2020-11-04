@@ -7,7 +7,10 @@ import (
 	"p2pderivatives-oracle/test"
 	mock_datafeed "p2pderivatives-oracle/test/mock/datafeed"
 	mock_dlccrypto "p2pderivatives-oracle/test/mock/dlccrypto"
+	"path/filepath"
 	"testing"
+
+	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
 
 	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
 
@@ -85,5 +88,15 @@ func TestOracleAPI_FinalizeServices_NoError(t *testing.T) {
 	}
 	err = oracleApi.InitializeServices()
 	err = oracleApi.FinalizeServices()
+	assert.NoError(t, err)
+}
+
+func TestAPIConfig_Initialize_NoError(t *testing.T) {
+	path := filepath.Join("..", "..", "test", "config")
+	c := conf.NewConfiguration("core", "integration", []string{path})
+	err := c.Initialize()
+	assert.NoError(t, err)
+	apiConfig := &api.Config{}
+	err = c.InitializeComponentConfig(apiConfig)
 	assert.NoError(t, err)
 }
