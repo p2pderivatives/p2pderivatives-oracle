@@ -6,10 +6,10 @@ import (
 
 // Asset represents an asset currency
 type Asset struct {
-	Base
+	Timestamp
 	AssetID     string `gorm:"primarykey"`
 	Description string
-	DLCData     []DLCData `gorm:"foreignkey:AssetID"`
+	DLCData     []EventData `gorm:"foreignkey:AssetID"`
 }
 
 // FindAsset will try to find in the db the asset corresponding to the id

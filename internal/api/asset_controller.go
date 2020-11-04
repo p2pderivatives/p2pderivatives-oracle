@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"math"
 	"net/http"
 	"p2pderivatives-oracle/internal/database/entity"
 	"p2pderivatives-oracle/internal/datafeed"
@@ -28,10 +26,10 @@ const (
 	URLParamTagTime = "time"
 	// RouteGETAssetConfig relative GET route to retrieve asset configuration
 	RouteGETAssetConfig = "/config"
-	// RouteGETAssetRvalue relative GET route to retrieve asset rvalue
-	RouteGETAssetRvalue = "/rvalue/:" + URLParamTagTime
-	// RouteGETAssetSignature relative GET route to retrieve asset signature
-	RouteGETAssetSignature = "/signature/:" + URLParamTagTime
+	// RouteGETAssetAnnouncement relative GET route to retrieve asset rvalues
+	RouteGETAssetAnnouncement = "/announcement/:" + URLParamTagTime
+	// RouteGETAssetAttestation relative GET route to retrieve asset signatures
+	RouteGETAssetAttestation = "/attestation/:" + URLParamTagTime
 )
 
 // AssetController represents the asset api Controller
@@ -52,8 +50,8 @@ func NewAssetController(assetID string, config AssetConfig) Controller {
 
 // Routes list and binds all routes to the router group provided
 func (ct *AssetController) Routes(route *gin.RouterGroup) {
-	route.GET(RouteGETAssetRvalue, ct.GetAssetRvalue)
-	route.GET(RouteGETAssetSignature, ct.GetAssetSignature)
+	route.GET(RouteGETAssetAnnouncement, ct.GetAssetAnnouncement)
+	route.GET(RouteGETAssetAttestation, ct.GetAssetAttestation)
 	route.GET(RouteGETAssetConfig, ct.GetConfiguration)
 }
 
@@ -67,9 +65,9 @@ func (ct *AssetController) GetConfiguration(c *gin.Context) {
 	})
 }
 
-// GetAssetRvalue handler returns the stored Rvalue related to the asset and time
+// GetAssetAnnouncement handler returns the stored Rvalue related to the asset and time
 // if not present and future time, it will generates a new one using the config start date as reference
-func (ct *AssetController) GetAssetRvalue(c *gin.Context) {
+func (ct *AssetController) GetAssetAnnouncement(c *gin.Context) {
 	ginlogrus.SetCtxLoggerHeader(c, "request-header", "Get Asset Rvalue")
 	logger := ginlogrus.GetCtxLogger(c)
 	_, requestedDate, err := validateAssetAndTime(c, ct.assetID)
@@ -91,12 +89,12 @@ func (ct *AssetController) GetAssetRvalue(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, NewDLCDataResponse(oracleInstance.PublicKey, dlcData))
+	c.JSON(http.StatusOK, NewOracleAnnouncement(oracleInstance.PublicKey, dlcData))
 }
 
-// GetAssetSignature handler returns the stored signature and asset value related to the asset and time
+// GetAssetAttestation handler returns the stored signature and asset value related to the asset and time
 // or if not present, it will generate a new one using the config start date as reference
-func (ct *AssetController) GetAssetSignature(c *gin.Context) {
+func (ct *AssetController) GetAssetAttestation(c *gin.Context) {
 	ginlogrus.SetCtxLoggerHeader(c, "request-header", "Get Asset Signature")
 	logger := ginlogrus.GetCtxLogger(c)
 	_, requestedDate, err := validateAssetAndTime(c, ct.assetID)
@@ -124,7 +122,7 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	if !dlcData.IsSigned() {
+	if !dlcData.HasSignature() {
 		logger.Debug("Computing Signature")
 		res, _ := ct.sigsMutMap.LoadOrStore(publishDate.String(), &sync.Mutex{})
 		mut, _ := res.(*sync.Mutex)
@@ -137,7 +135,7 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 			c.Error(err)
 			return
 		}
-		if !dlcData.IsSigned() {
+		if !dlcData.HasSignature() {
 			asset, currency := ParseAssetID(ct.assetID)
 			feed := c.MustGet(ContextIDDataFeed).(datafeed.DataFeed)
 			value, err := feed.FindPastAssetPrice(asset, currency, dlcData.PublishedDate)
@@ -146,15 +144,8 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 				return
 			}
 
-			// round datafeed price to neareast integer
-			valueMessage := fmt.Sprintf("%d", int(math.Round(*value)))
 			oracleInstance := c.MustGet(ContextIDOracle).(*oracle.Oracle)
-			kvalue, err := dlccrypto.NewPrivateKey(dlcData.Kvalue)
-			if err != nil {
-				c.Error(NewUnknownCryptoServiceError(err))
-				return
-			}
-			sig, err := crypto.ComputeSchnorrSignature(oracleInstance.PrivateKey, kvalue, valueMessage)
+			sigs, decomposedValue, err := dlccrypto.GetRoundedDecomposedSignaturesForValue(*value, ct.config.SignConfig.Base, ct.config.SignConfig.NbDigits, oracleInstance.PrivateKey, dlcData.Kvalues, crypto)
 			if err != nil {
 				c.Error(NewUnknownCryptoServiceError(err))
 				return
@@ -164,8 +155,8 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 				db,
 				dlcData.AssetID,
 				dlcData.PublishedDate,
-				sig.EncodeToString(),
-				valueMessage)
+				sigs,
+				decomposedValue)
 
 			if err != nil {
 				c.Error(NewUnknownDBError(err))
@@ -174,11 +165,10 @@ func (ct *AssetController) GetAssetSignature(c *gin.Context) {
 		}
 	}
 
-	oracleInstance := c.MustGet(ContextIDOracle).(*oracle.Oracle)
-	c.JSON(http.StatusOK, NewDLCDataResponse(oracleInstance.PublicKey, dlcData))
+	c.JSON(http.StatusOK, NewOracleAttestation(dlcData))
 }
 
-func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.CryptoService, assetID string, publishDate time.Time, config AssetConfig) (*entity.DLCData, error) {
+func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.CryptoService, assetID string, publishDate time.Time, config AssetConfig) (*entity.EventData, error) {
 	dlcData, err := entity.FindDLCDataPublishedAt(db, assetID, publishDate)
 	if err == nil {
 		logger.Debug("Found a matching DLC Data in db")
@@ -198,16 +188,23 @@ func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB
 				logger.Debug("Found a matching DLC Data in db")
 			} else if errors.Is(err, gorm.ErrRecordNotFound) {
 				logger.Debug("Generating new DLC data Rvalue")
-				signingK, rvalue, err := oracle.GenerateSchnorrKeyPair()
-				if err != nil {
-					return nil, NewUnknownCryptoServiceError(err)
+				kValues := make([]string, config.SignConfig.NbDigits)
+				rValues := make([]string, config.SignConfig.NbDigits)
+				for i := 0; i < config.SignConfig.NbDigits; i++ {
+					signingK, rvalue, err := oracle.GenerateSchnorrKeyPair()
+					if err != nil {
+						return nil, NewUnknownCryptoServiceError(err)
+					}
+					kValues[i] = signingK.EncodeToString()
+					rValues[i] = rvalue.EncodeToString()
 				}
-				dlcData, err = entity.CreateDLCData(
+				dlcData, err = entity.CreateEventData(
 					db,
 					assetID,
 					publishDate,
-					signingK.EncodeToString(),
-					rvalue.EncodeToString())
+					kValues,
+					rValues,
+					ct.config.SignConfig.Base)
 				if err != nil {
 					return nil, NewUnknownDBError(err)
 				}

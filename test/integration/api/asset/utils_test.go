@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-func GetRouteAssetRvalue(assetID string, requestedDate time.Time) string {
-	route := api.AssetBaseRoute + "/" + assetID + api.RouteGETAssetRvalue
+func GetRouteAssetAnnouncement(assetID string, requestedDate time.Time) string {
+	route := api.AssetBaseRoute + "/" + assetID + api.RouteGETAssetAnnouncement
 	return strings.Replace(route, ":"+api.URLParamTagTime, requestedDate.Format(api.TimeFormatISO8601), 1)
 }
 
-func GetRouteAssetSignature(assetID string, requestedDate time.Time) string {
-	route := api.AssetBaseRoute + "/" + assetID + api.RouteGETAssetSignature
+func GetRouteAssetAttestation(assetID string, requestedDate time.Time) string {
+	route := api.AssetBaseRoute + "/" + assetID + api.RouteGETAssetAttestation
 	return strings.Replace(route, ":"+api.URLParamTagTime, requestedDate.Format(api.TimeFormatISO8601), 1)
 }
