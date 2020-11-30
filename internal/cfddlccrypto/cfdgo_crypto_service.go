@@ -1,14 +1,15 @@
-package dlccrypto
+package cfddlccrypto
 
 import (
 	"crypto/sha256"
+	"p2pderivatives-oracle/internal/dlccrypto"
 
 	cfdgo "github.com/cryptogarageinc/cfd-go"
 	"github.com/pkg/errors"
 )
 
 // NewCfdgoCryptoService returns a CryptoService implemented using cfd-go library
-func NewCfdgoCryptoService() CryptoService {
+func NewCfdgoCryptoService() dlccrypto.CryptoService {
 	schnorrUtil := cfdgo.NewSchnorrUtil()
 	return &CfdgoCryptoService{schnorrUtil}
 }
@@ -19,13 +20,13 @@ type CfdgoCryptoService struct {
 }
 
 // GenerateSchnorrKeyPair returns a freshly generated Schnorr public/private key pair
-func (o *CfdgoCryptoService) GenerateSchnorrKeyPair() (*PrivateKey, *SchnorrPublicKey, error) {
+func (o *CfdgoCryptoService) GenerateSchnorrKeyPair() (*dlccrypto.PrivateKey, *dlccrypto.SchnorrPublicKey, error) {
 	_, seckey, _, err := cfdgo.CfdGoCreateKeyPair(true, 0)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "Error while generating cfd go key pair")
 	}
 
-	privkey, err := NewPrivateKey(seckey)
+	privkey, err := dlccrypto.NewPrivateKey(seckey)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "Error while generating private key")
 	}
@@ -40,12 +41,12 @@ func (o *CfdgoCryptoService) GenerateSchnorrKeyPair() (*PrivateKey, *SchnorrPubl
 }
 
 // SchnorrPublicKeyFromPrivateKey computes a Schnorr public key from a private key
-func (o *CfdgoCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *PrivateKey) (*SchnorrPublicKey, error) {
-	bs, err := o.schnorrUtil.GetPubkeyFromPrivkey(cfdgo.NewByteData(privateKey.bytes))
+func (o *CfdgoCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *dlccrypto.PrivateKey) (*dlccrypto.SchnorrPublicKey, error) {
+	bs, err := o.schnorrUtil.GetPubkeyFromPrivkey(*cfdgo.NewByteDataFromHexIgnoreError(privateKey.EncodeToString()))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error while calculating public key from private key")
 	}
-	pubkey, err := NewSchnorrPublicKey(bs.ToHex())
+	pubkey, err := dlccrypto.NewSchnorrPublicKey(bs.ToHex())
 	if err != nil {
 		return nil, err
 	}
@@ -53,14 +54,16 @@ func (o *CfdgoCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *PrivateK
 }
 
 // ComputeSchnorrSignature computes a schnorr signature on the given message (will be hashed by sha256)
-func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *PrivateKey, kvalue *PrivateKey, message string) (*Signature, error) {
+func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *dlccrypto.PrivateKey, kvalue *dlccrypto.PrivateKey, message string) (*dlccrypto.Signature, error) {
 	hash := sha256.Sum256([]byte(message))
 
-	bs, err := o.schnorrUtil.SignWithNonce(cfdgo.NewByteData(hash[:]), cfdgo.NewByteData(privateKey.bytes), cfdgo.NewByteData(kvalue.bytes))
+	bs, err := o.schnorrUtil.SignWithNonce(cfdgo.NewByteData(hash[:]),
+		*cfdgo.NewByteDataFromHexIgnoreError(privateKey.EncodeToString()),
+		*cfdgo.NewByteDataFromHexIgnoreError(kvalue.EncodeToString()))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error while computing schnorr signature")
 	}
-	sig, err := NewSignature(bs.ToHex())
+	sig, err := dlccrypto.NewSignature(bs.ToHex())
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +71,9 @@ func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *PrivateKey, kva
 }
 
 // VerifySchnorrSignature verifies the schnorr signature against a given public key on the given message (will be hashed with sha256)
-func (o *CfdgoCryptoService) VerifySchnorrSignature(publicKey *SchnorrPublicKey, signature *Signature, message string) (bool, error) {
+func (o *CfdgoCryptoService) VerifySchnorrSignature(publicKey *dlccrypto.SchnorrPublicKey, signature *dlccrypto.Signature, message string) (bool, error) {
 	hash := sha256.Sum256([]byte(message))
-	ok, err := o.schnorrUtil.Verify(cfdgo.NewByteData(signature.bytes), cfdgo.NewByteData(hash[:]), cfdgo.NewByteData(publicKey.bytes))
+	ok, err := o.schnorrUtil.Verify(*cfdgo.NewByteDataFromHexIgnoreError(signature.EncodeToString()), cfdgo.NewByteData(hash[:]), *cfdgo.NewByteDataFromHexIgnoreError(publicKey.EncodeToString()))
 	if err != nil {
 		return false, errors.WithMessage(err, "Error while verifying schnorr signature")
 	}

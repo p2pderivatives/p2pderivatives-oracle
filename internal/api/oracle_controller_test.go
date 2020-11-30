@@ -22,7 +22,11 @@ func NewTestOracleService() (*oracle.Oracle, error) {
 	if err != nil {
 		return nil, err
 	}
-	return oracle.New(priv)
+	pub, err := dlccrypto.NewSchnorrPublicKey(OraclePublicKey)
+	if err != nil {
+		return nil, err
+	}
+	return oracle.New(priv, pub), nil
 }
 
 func SetupOracleEngine(recorder *httptest.ResponseRecorder, o *oracle.Oracle) (*gin.Context, *gin.Engine) {

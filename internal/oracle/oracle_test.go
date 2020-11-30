@@ -1,7 +1,7 @@
 package oracle_test
 
 import (
-	"p2pderivatives-oracle/internal/dlccrypto"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/oracle"
 	"p2pderivatives-oracle/test"
 	"path/filepath"
@@ -24,19 +24,13 @@ var ExpectedKeyPair = struct {
 	passPath:   filepath.Join(test.VectorsDirectoryPath, "oracle/pass.txt"),
 }
 
-func Test_New_WithInValidKey_ReturnsError(t *testing.T) {
-	invalidPrivKey := &dlccrypto.PrivateKey{}
-	_, err := oracle.New(invalidPrivKey)
-	assert.NotNil(t, err)
-}
-
 func Test_FromConfig_WithPass_ReturnsOracle(t *testing.T) {
 	config := &oracle.Config{
 		KeyFile: ExpectedKeyPair.keyPath,
 		KeyPass: ExpectedKeyPair.password,
 	}
 
-	oracleInstance, err := oracle.FromConfig(config)
+	oracleInstance, err := oracle.FromConfig(config, cfddlccrypto.NewCfdgoCryptoService())
 	assert.NoError(t, err)
 	if assert.NotNil(t, oracleInstance) {
 		assert.Equal(t, ExpectedKeyPair.privateKey, oracleInstance.PrivateKey.EncodeToString())
@@ -49,7 +43,7 @@ func Test_FromConfig_WithPassFile_ReturnsOracle(t *testing.T) {
 		KeyFile:     ExpectedKeyPair.keyPath,
 		KeyPassFile: ExpectedKeyPair.passPath,
 	}
-	oracleInstance, err := oracle.FromConfig(config)
+	oracleInstance, err := oracle.FromConfig(config, cfddlccrypto.NewCfdgoCryptoService())
 	assert.NoError(t, err)
 	if assert.NotNil(t, oracleInstance) {
 		assert.Equal(t, ExpectedKeyPair.privateKey, oracleInstance.PrivateKey.EncodeToString())
@@ -61,6 +55,6 @@ func Test_FromConfig_WithNoPass_ReturnsError(t *testing.T) {
 	config := &oracle.Config{
 		KeyFile: ExpectedKeyPair.keyPath,
 	}
-	_, err := oracle.FromConfig(config)
+	_, err := oracle.FromConfig(config, cfddlccrypto.NewCfdgoCryptoService())
 	assert.NotNil(t, err)
 }
