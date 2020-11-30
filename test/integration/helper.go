@@ -8,10 +8,12 @@ import (
 	"log"
 	"os"
 	"p2pderivatives-oracle/internal/api"
-	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/oracle"
 	"path/filepath"
 	"runtime"
+
+	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -99,7 +101,7 @@ func InitHelper() {
 		oracleConfig.KeyPassFile = filepath.Join(IntegrationDir, oracleConfig.KeyPassFile)
 	}
 
-	ExpectedOracle, err = oracle.FromConfig(oracleConfig)
+	ExpectedOracle, err = oracle.FromConfig(oracleConfig, cfddlccrypto.NewCfdgoCryptoService())
 	if err != nil {
 		log.Fatalf("Could not instantiate Oracle from config. %v", err)
 	}

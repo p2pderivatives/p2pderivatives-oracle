@@ -3,22 +3,23 @@ package main
 import (
 	"context"
 	"flag"
-	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
-	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
-	"github.com/cryptogarageinc/server-common-go/pkg/log"
-	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
 	stdlog "log"
 	"net/http"
 	"os"
 	"os/signal"
 	"p2pderivatives-oracle/internal/api"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/cryptocompare"
 	"p2pderivatives-oracle/internal/database/entity"
 	"p2pderivatives-oracle/internal/datafeed"
-	"p2pderivatives-oracle/internal/dlccrypto"
 	"p2pderivatives-oracle/internal/oracle"
 	"syscall"
 	"time"
+
+	conf "github.com/cryptogarageinc/server-common-go/pkg/configuration"
+	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
+	"github.com/cryptogarageinc/server-common-go/pkg/log"
+	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
 )
 
 var (
@@ -166,12 +167,12 @@ func newInitializedRouter(log *log.Log, config *conf.Configuration) *router.Rout
 // NewDefaultOracleAPI returns a router.API with default crypto, database and datafeed services
 func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 	// Setup crypto service
-	cryptoInstance := dlccrypto.NewCfdgoCryptoService()
+	cryptoInstance := cfddlccrypto.NewCfdgoCryptoService()
 
 	// Setup Oracle
 	oracleConfig := &oracle.Config{}
 	config.InitializeComponentConfig(oracleConfig)
-	oracleInstance, err := oracle.FromConfig(oracleConfig)
+	oracleInstance, err := oracle.FromConfig(oracleConfig, cryptoInstance)
 	if err != nil {
 		l.Logger.Fatalf("Could not create a oracle instance")
 		panic(err)

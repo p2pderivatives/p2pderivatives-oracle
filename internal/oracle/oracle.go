@@ -1,8 +1,9 @@
 package oracle
 
 import (
-	"github.com/cryptogarageinc/server-common-go/pkg/utils/file"
 	"p2pderivatives-oracle/internal/dlccrypto"
+
+	"github.com/cryptogarageinc/server-common-go/pkg/utils/file"
 
 	"github.com/pkg/errors"
 )
@@ -15,22 +16,17 @@ type Oracle struct {
 
 // New returns a new Oracle instance
 // the public key will be calculated from the private key
-func New(privateKey *dlccrypto.PrivateKey) (*Oracle, error) {
-	cryptoService := dlccrypto.NewCfdgoCryptoService()
-	publicKey, err := cryptoService.SchnorrPublicKeyFromPrivateKey(privateKey)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Could not recover Oracle Public Key")
-	}
+func New(privateKey *dlccrypto.PrivateKey, publicKey *dlccrypto.SchnorrPublicKey) *Oracle {
 	return &Oracle{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
-	}, nil
+	}
 }
 
 // FromConfig returns an oracle from configuration
 // password has to be defined either from a file or directly in configuration (environment variable)
 // in case of using a txt file as password, the first line will be considered as password
-func FromConfig(config *Config) (*Oracle, error) {
+func FromConfig(config *Config, cryptoService dlccrypto.CryptoService) (*Oracle, error) {
 	var pass string
 	var err error
 	if config.KeyPass == "" && config.KeyPassFile == "" {
@@ -49,5 +45,9 @@ func FromConfig(config *Config) (*Oracle, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "Could not recover Oracle Private Key")
 	}
-	return New(privKey)
+	publicKey, err := cryptoService.SchnorrPublicKeyFromPrivateKey(privKey)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Could not get public key from private key")
+	}
+	return New(privKey, publicKey), nil
 }

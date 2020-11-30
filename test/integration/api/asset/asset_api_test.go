@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"p2pderivatives-oracle/internal/api"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/dlccrypto"
 	helper "p2pderivatives-oracle/test/integration"
 	"testing"
@@ -194,7 +195,7 @@ func assertPublishedDate(
 func assertSignature(assertSub *assert.Assertions, rvalueHex string, sigHex string, message string) bool {
 	sig, err := dlccrypto.NewSignature(sigHex)
 	assertSub.NoError(err)
-	isValidSignature, err := dlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
+	isValidSignature, err := cfddlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
 		helper.ExpectedOracle.PublicKey,
 		sig,
 		message)

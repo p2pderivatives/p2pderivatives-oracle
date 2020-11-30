@@ -1,7 +1,8 @@
-package dlccrypto_test
+package cfddlccrypto_test
 
 import (
 	"math/rand"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/dlccrypto"
 	"testing"
 	"time"
@@ -63,7 +64,7 @@ var (
 )
 
 func NewTestCfdgoCryptoService() dlccrypto.CryptoService {
-	return dlccrypto.NewCfdgoCryptoService()
+	return cfddlccrypto.NewCfdgoCryptoService()
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -106,7 +107,7 @@ func Test_SignAndVerify(t *testing.T) {
 }
 
 func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
-	crypto := dlccrypto.NewCfdgoCryptoService()
+	crypto := cfddlccrypto.NewCfdgoCryptoService()
 	oracleKey, err := dlccrypto.NewPrivateKey(TestOracleKeyPair.PrivateKey)
 	assert.NoError(t, err)
 	for _, sigpair := range TestSignature {
@@ -119,7 +120,7 @@ func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
 }
 
 func Test_CfdgoCryptoService_VerifySignature(t *testing.T) {
-	crypto := dlccrypto.NewCfdgoCryptoService()
+	crypto := cfddlccrypto.NewCfdgoCryptoService()
 	oraclePub, err := dlccrypto.NewSchnorrPublicKey(TestOracleKeyPair.PublicKey)
 	assert.NoError(t, err)
 	for _, sigpair := range TestSignature {
