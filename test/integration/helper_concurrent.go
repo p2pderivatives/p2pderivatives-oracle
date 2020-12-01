@@ -46,10 +46,10 @@ func (h *HttpConcurrentHandler) RegisterRequest(req *resty.Request, method strin
 func (h *HttpConcurrentHandler) RunAndWait() []*HttpRequestResult {
 	n := len(h.requests)
 	h.results = make(chan *HttpRequestResult, n)
+	h.wg.Add(n)
 
 	// register routines
 	for _, r := range h.requests {
-		h.wg.Add(1)
 		rObj := r
 		go func() {
 			<-h.startFlag // wait until channel is closed

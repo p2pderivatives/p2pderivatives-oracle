@@ -32,24 +32,29 @@ var TestDuration = []time.Duration{
 	24*time.Hour + 30*time.Minute,
 }
 
-const RepeatRequestCounter = 3
+const RepeatRequestCounter = 5
 
-func TestGetAssetRvalue_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.T) {
-	t.Parallel()
-
+func concurrentTestBase(
+	t *testing.T,
+	durations []time.Duration,
+	repeatRequestCounter int,
+	assets map[string]api.AssetConfig,
+	routeBuilder func(string, time.Time) string,
+	extraCheck func(*assert.Assertions, *api.DLCDataResponse) bool,
+	computeDuration func(dur time.Duration, config api.AssetConfig) time.Duration) {
 	apiResults := map[string]*api.DLCDataResponse{}
 
-	for asset := range helper.APIConfig.AssetConfigs {
+	for asset, config := range assets {
 		t.Run(fmt.Sprintf("asset %s", asset), func(subT *testing.T) {
 			assertSub := assert.New(subT)
 			subT.Parallel()
 
 			// arrange
 			handler := helper.NewHttpConcurrentHandler()
-			for _, dur := range TestDuration {
-				requestedDate := Now.Add(dur)
-				route := GetRouteAssetRvalue(asset, requestedDate)
-				for i := 0; i < RepeatRequestCounter; i++ {
+			for _, dur := range durations {
+				requestedDate := Now.Add(computeDuration(dur, config))
+				route := routeBuilder(asset, requestedDate)
+				for i := 0; i < repeatRequestCounter; i++ {
 					client := helper.CreateDefaultClient()
 					req := client.R().SetResult(&api.DLCDataResponse{})
 					handler.RegisterRequest(req, resty.MethodGet, route)
@@ -69,6 +74,7 @@ func TestGetAssetRvalue_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.
 							assertSub.Equal(val, actual)
 						} else {
 							assertSub.Equal(asset, actual.AssetID)
+							extraCheck(assertSub, actual)
 							apiResults[resp.Request.URL] = actual
 						}
 					}
@@ -76,50 +82,29 @@ func TestGetAssetRvalue_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.
 			}
 		})
 	}
+
+}
+
+func dummyCheck(t *assert.Assertions, resp *api.DLCDataResponse) bool {
+	return true
+}
+
+func dummyDuration(dur time.Duration, config api.AssetConfig) time.Duration {
+	return dur
+}
+
+func signatureDuration(dur time.Duration, config api.AssetConfig) time.Duration {
+	return -(config.Frequency + dur)
+}
+
+func TestGetAssetRvalue_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.T) {
+	t.Parallel()
+
+	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetRvalue, dummyCheck, dummyDuration)
 }
 
 func TestGetAssetSignature_Concurrent_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 	t.Parallel()
 
-	apiResults := map[string]*api.DLCDataResponse{}
-
-	for asset, config := range helper.APIConfig.AssetConfigs {
-		t.Run(fmt.Sprintf("asset %s", asset), func(subT *testing.T) {
-			assertSub := assert.New(subT)
-			subT.Parallel()
-
-			// arrange
-			handler := helper.NewHttpConcurrentHandler()
-			for _, dur := range TestDuration {
-				// past date for signature so negative duration
-				requestedDate := Now.Add(-(config.Frequency + dur))
-				route := GetRouteAssetSignature(asset, requestedDate)
-				for i := 0; i < RepeatRequestCounter; i++ {
-					client := helper.CreateDefaultClient()
-					req := client.R().SetResult(&api.DLCDataResponse{})
-					handler.RegisterRequest(req, resty.MethodGet, route)
-				}
-			}
-
-			// act
-			results := handler.RunAndWait()
-
-			// assert
-			for _, r := range results {
-				if assertSub.NoError(r.Error, "Error while sending the request") {
-					resp := r.Response
-					if assertSub.Equal(http.StatusOK, resp.StatusCode(), resp.String()) {
-						actual := resp.Result().(*api.DLCDataResponse)
-						if val, ok := apiResults[resp.Request.URL]; ok {
-							assertSub.Equal(val, actual)
-						} else {
-							assertSub.Equal(asset, actual.AssetID)
-							assertSignature(assertSub, actual.Rvalue, actual.Signature, actual.Value)
-							apiResults[resp.Request.URL] = actual
-						}
-					}
-				}
-			}
-		})
-	}
+	concurrentTestBase(t, TestDuration, RepeatRequestCounter, helper.APIConfig.AssetConfigs, GetRouteAssetSignature, assertSignature, signatureDuration)
 }
