@@ -148,7 +148,7 @@ func TestGetAssetSignature_ReturnsCorrectValue(t *testing.T) {
 
 				assertSub.Equal(asset, actual.AssetID)
 				assertPublishedDate(assertSub, requestedDate, actual.PublishedDate, config.Frequency)
-				assertSignature(assertSub, actual.Rvalue, actual.Signature, actual.Value)
+				assertSignature(assertSub, actual)
 			}
 		})
 	}
@@ -192,19 +192,19 @@ func assertPublishedDate(
 		publishedDate)
 }
 
-func assertSignature(assertSub *assert.Assertions, rvalueHex string, sigHex string, message string) bool {
-	sig, err := dlccrypto.NewSignature(sigHex)
+func assertSignature(assertSub *assert.Assertions, resp *api.DLCDataResponse) bool {
+	sig, err := dlccrypto.NewSignature(resp.Signature)
 	assertSub.NoError(err)
 	isValidSignature, err := cfddlccrypto.NewCfdgoCryptoService().VerifySchnorrSignature(
 		helper.ExpectedOracle.PublicKey,
 		sig,
-		message)
+		resp.Value)
 	assertSub.NoError(err)
 	return assertSub.True(
 		isValidSignature,
 		"Signature %v does not match using oracle public key: %s rvalue:　%s message: %s",
 		sig,
 		helper.ExpectedOracle.PublicKey.EncodeToString(),
-		rvalueHex,
-		sigHex)
+		resp.Rvalue,
+		resp.Signature)
 }
