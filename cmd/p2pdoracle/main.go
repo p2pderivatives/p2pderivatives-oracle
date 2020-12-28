@@ -174,7 +174,7 @@ func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 	config.InitializeComponentConfig(oracleConfig)
 	oracleInstance, err := oracle.FromConfig(oracleConfig, cryptoInstance)
 	if err != nil {
-		l.Logger.Fatalf("Could not create a oracle instance")
+		l.Logger.Fatalf("Could not create a oracle instance %v", err)
 		panic(err)
 	}
 
