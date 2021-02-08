@@ -1,6 +1,6 @@
 ARG ARG_CFD_GO_VERSION=0.2.3
 ARG CFD_GO_ZIP=cfdgo-v${ARG_CFD_GO_VERSION}-alpine_x86_64.zip
-FROM golang:1.14-alpine as dev
+FROM golang:1.14-alpine3.12 as dev
 RUN apk update
 RUN apk add make cmake gcc g++ libc-dev git unzip
 ENV GO111MODULE=on
