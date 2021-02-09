@@ -10,30 +10,30 @@ import (
 	reflect "reflect"
 )
 
-// MockCryptoService is a mock of CryptoService interface.
+// MockCryptoService is a mock of CryptoService interface
 type MockCryptoService struct {
 	ctrl     *gomock.Controller
 	recorder *MockCryptoServiceMockRecorder
 }
 
-// MockCryptoServiceMockRecorder is the mock recorder for MockCryptoService.
+// MockCryptoServiceMockRecorder is the mock recorder for MockCryptoService
 type MockCryptoServiceMockRecorder struct {
 	mock *MockCryptoService
 }
 
-// NewMockCryptoService creates a new mock instance.
+// NewMockCryptoService creates a new mock instance
 func NewMockCryptoService(ctrl *gomock.Controller) *MockCryptoService {
 	mock := &MockCryptoService{ctrl: ctrl}
 	mock.recorder = &MockCryptoServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockCryptoService) EXPECT() *MockCryptoServiceMockRecorder {
 	return m.recorder
 }
 
-// GenerateSchnorrKeyPair mocks base method.
+// GenerateSchnorrKeyPair mocks base method
 func (m *MockCryptoService) GenerateSchnorrKeyPair() (*dlccrypto.PrivateKey, *dlccrypto.SchnorrPublicKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateSchnorrKeyPair")
@@ -43,13 +43,13 @@ func (m *MockCryptoService) GenerateSchnorrKeyPair() (*dlccrypto.PrivateKey, *dl
 	return ret0, ret1, ret2
 }
 
-// GenerateSchnorrKeyPair indicates an expected call of GenerateSchnorrKeyPair.
+// GenerateSchnorrKeyPair indicates an expected call of GenerateSchnorrKeyPair
 func (mr *MockCryptoServiceMockRecorder) GenerateSchnorrKeyPair() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateSchnorrKeyPair", reflect.TypeOf((*MockCryptoService)(nil).GenerateSchnorrKeyPair))
 }
 
-// SchnorrPublicKeyFromPrivateKey mocks base method.
+// SchnorrPublicKeyFromPrivateKey mocks base method
 func (m *MockCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *dlccrypto.PrivateKey) (*dlccrypto.SchnorrPublicKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SchnorrPublicKeyFromPrivateKey", privateKey)
@@ -58,13 +58,13 @@ func (m *MockCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *dlccrypto
 	return ret0, ret1
 }
 
-// SchnorrPublicKeyFromPrivateKey indicates an expected call of SchnorrPublicKeyFromPrivateKey.
+// SchnorrPublicKeyFromPrivateKey indicates an expected call of SchnorrPublicKeyFromPrivateKey
 func (mr *MockCryptoServiceMockRecorder) SchnorrPublicKeyFromPrivateKey(privateKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchnorrPublicKeyFromPrivateKey", reflect.TypeOf((*MockCryptoService)(nil).SchnorrPublicKeyFromPrivateKey), privateKey)
 }
 
-// ComputeSchnorrSignature mocks base method.
+// ComputeSchnorrSignature mocks base method
 func (m *MockCryptoService) ComputeSchnorrSignature(privateKey, oneTimeSigningK *dlccrypto.PrivateKey, message string) (*dlccrypto.Signature, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ComputeSchnorrSignature", privateKey, oneTimeSigningK, message)
@@ -73,13 +73,13 @@ func (m *MockCryptoService) ComputeSchnorrSignature(privateKey, oneTimeSigningK 
 	return ret0, ret1
 }
 
-// ComputeSchnorrSignature indicates an expected call of ComputeSchnorrSignature.
+// ComputeSchnorrSignature indicates an expected call of ComputeSchnorrSignature
 func (mr *MockCryptoServiceMockRecorder) ComputeSchnorrSignature(privateKey, oneTimeSigningK, message interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeSchnorrSignature", reflect.TypeOf((*MockCryptoService)(nil).ComputeSchnorrSignature), privateKey, oneTimeSigningK, message)
 }
 
-// VerifySchnorrSignature mocks base method.
+// VerifySchnorrSignature mocks base method
 func (m *MockCryptoService) VerifySchnorrSignature(publicKey *dlccrypto.SchnorrPublicKey, signature *dlccrypto.Signature, message string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VerifySchnorrSignature", publicKey, signature, message)
@@ -88,7 +88,7 @@ func (m *MockCryptoService) VerifySchnorrSignature(publicKey *dlccrypto.SchnorrP
 	return ret0, ret1
 }
 
-// VerifySchnorrSignature indicates an expected call of VerifySchnorrSignature.
+// VerifySchnorrSignature indicates an expected call of VerifySchnorrSignature
 func (mr *MockCryptoServiceMockRecorder) VerifySchnorrSignature(publicKey, signature, message interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySchnorrSignature", reflect.TypeOf((*MockCryptoService)(nil).VerifySchnorrSignature), publicKey, signature, message)

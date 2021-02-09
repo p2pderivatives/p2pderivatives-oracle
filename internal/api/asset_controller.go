@@ -136,9 +136,8 @@ func (ct *AssetController) GetAssetAttestation(c *gin.Context) {
 			return
 		}
 		if !dlcData.HasSignature() {
-			asset, currency := ParseAssetID(ct.assetID)
 			feed := c.MustGet(ContextIDDataFeed).(datafeed.DataFeed)
-			value, err := feed.FindPastAssetPrice(asset, currency, dlcData.PublishedDate)
+			value, err := feed.FindPastAssetPrice(ct.assetID, dlcData.PublishedDate)
 			if err != nil {
 				c.Error(NewUnknownDataFeedError(err))
 				return
@@ -266,9 +265,4 @@ func ParseTime(timeParam string) (*time.Time, error) {
 	}
 	utc := timestamp.UTC()
 	return &utc, nil
-}
-
-// ParseAssetID will return the asset and currency related to the asset id
-func ParseAssetID(assetID string) (asset string, currency string) {
-	return assetID[0:3], assetID[3:6]
 }

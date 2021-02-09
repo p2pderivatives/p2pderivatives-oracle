@@ -15,12 +15,12 @@ type dummyDataFeed struct {
 	config *DummyConfig
 }
 
-func (d *dummyDataFeed) FindCurrentAssetPrice(assetID string, currency string) (*float64, error) {
+func (d *dummyDataFeed) FindCurrentAssetPrice(assetID string) (*float64, error) {
 	f := d.config.ReturnValue
 	return &f, nil
 }
 
-func (d *dummyDataFeed) FindPastAssetPrice(assetID string, currency string, date time.Time) (*float64, error) {
+func (d *dummyDataFeed) FindPastAssetPrice(assetID string, date time.Time) (*float64, error) {
 	f := d.config.ReturnValue
 	return &f, nil
 }

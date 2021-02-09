@@ -9,6 +9,6 @@ type DataFeed interface {
 
 // AssetPriceFeed interface represents a datafeed which implemented price related services
 type AssetPriceFeed interface {
-	FindCurrentAssetPrice(assetID string, currency string) (*float64, error)
-	FindPastAssetPrice(assetID string, currency string, date time.Time) (*float64, error)
+	FindCurrentAssetPrice(assetID string) (*float64, error)
+	FindPastAssetPrice(assetID string, date time.Time) (*float64, error)
 }
