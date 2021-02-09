@@ -289,7 +289,7 @@ func TestAssetController_GetAssetAttestation_NotInDB_ReturnsCorrectValue(t *test
 		}
 		// mock datafeed
 		feed := mock_datafeed.NewMockDataFeed(ctrl)
-		feed.EXPECT().FindPastAssetPrice("btc", "usd", expectedDate).Return(sigValue, nil)
+		feed.EXPECT().FindPastAssetPrice("btcusd", expectedDate).Return(sigValue, nil)
 		// mock crypto
 		crypto := mock_dlccrypto.NewMockCryptoService(ctrl)
 		for i := 0; i < len(kvalues); i++ {

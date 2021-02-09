@@ -47,5 +47,12 @@ api:
 datafeed:
   cryptoCompare:
     baseUrl: https://min-api.cryptocompare.com/data
+    assetConfigs:
+      btcusd:
+        fsym: "btc"
+        tsym: "usd"
+      btcjpy:
+        fsym: "btc"
+        tsym: "jpy"
   dummy:
     returnValue: 9000

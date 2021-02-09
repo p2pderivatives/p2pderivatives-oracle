@@ -53,7 +53,9 @@ func (c *Client) Initialize() {
 	c.httpClient = resty.New()
 	c.httpClient.SetHostURL(c.config.APIBaseURL)
 	c.httpClient.SetHeader("Accept", "application/json")
-	c.httpClient.SetHeader("authorization", "Apikey "+c.config.APIKey)
+	if c.config.APIKey != "" {
+		c.httpClient.SetHeader("authorization", "Apikey "+c.config.APIKey)
+	}
 	c.initialized = true
 }
 
@@ -63,26 +65,30 @@ func (c *Client) IsInitialized() bool {
 }
 
 // FindCurrentAssetPrice sends a GET request to the CryptoCompare API to retrieve the current price of an asset
-func (c *Client) FindCurrentAssetPrice(assetID string, currency string) (*float64, error) {
-	route := fmt.Sprintf(priceRoute+"?fsym=%s&tsyms=%s", assetID, currency)
+func (c *Client) FindCurrentAssetPrice(assetID string) (*float64, error) {
+	assetConfig, ok := c.config.AssetsConfig[assetID]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Could not find config for asset %v", assetID))
+	}
+	route := fmt.Sprintf(priceRoute+"?fsym=%s&tsyms=%s", assetConfig.fsym, assetConfig.tsyms)
 	resp, err := c.getAssetPrice(route, apiPriceResponse{})
 	if err != nil {
 		return nil, err
 	}
 
 	res := *(resp.Result().(*apiPriceResponse))
-	val, ok := res[strings.ToUpper(currency)]
+	val, ok := res[strings.ToUpper(assetConfig.tsyms)]
 
 	// it should not happened if the request was well formed
 	if !ok {
-		return nil, errors.Errorf("error currency %s not found in cryptocompare response", currency)
+		return nil, errors.Errorf("error currency %s not found in cryptocompare response", assetConfig.tsyms)
 	}
 
 	return &val, nil
 }
 
 // FindPastAssetPrice sends a GET request to the CryptoCompare API to retrieve a past price of an asset
-func (c *Client) FindPastAssetPrice(assetID string, currency string, date time.Time) (*float64, error) {
+func (c *Client) FindPastAssetPrice(assetID string, date time.Time) (*float64, error) {
 	now := time.Now()
 	if now.Before(date) {
 		return nil, errors.New("date should be before now")
@@ -94,10 +100,14 @@ func (c *Client) FindPastAssetPrice(assetID string, currency string, date time.T
 	} else {
 		precisionRoute = pricePastMinuteRoute
 	}
+	var assetConfig, ok = c.config.AssetsConfig[assetID]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("No config found for asset %v", assetID))
+	}
 	route := fmt.Sprintf(
 		precisionRoute+"?fsym=%s&tsym=%s&toTs=%d&limit=%d",
-		assetID,
-		currency,
+		assetConfig.fsym,
+		assetConfig.tsyms,
 		date.Unix(),
 		limitPastResponse)
 	resp, err := c.getAssetPrice(route, apiPastPriceResponse{})
