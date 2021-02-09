@@ -1,7 +1,9 @@
 server:
   address: "0.0.0.0:8080"
 oracle:
+  # the private key of the oracle
   keyFile: /key/key.pem
+  # the password protecting the pem file
   keyPass:
     file: /key/pass.txt
 log:
@@ -19,13 +21,20 @@ database:
   dbuser: postgres
   dbname: db
 api:
+  # the list of assets provided by this oracle
   assets:
     btcusd:
+      # the base date from which the release dates are computed
       startDate: 2020-01-01T00:00:00Z
+      # frequency at which events are served (ISO8601)
       frequency: PT1H
+      # maximum period until which events are served (ISO8601)
       range: P2MT
+      # unit of the asset being served
       unit: usd/btc
+      # precision for the data being served (see https://github.com/discreetlogcontracts/dlcspecs/blob/master/Oracle.md#digit-decomposition)
       precision: 0
+      # configuration for digit decomposition (see https://github.com/discreetlogcontracts/dlcspecs/blob/master/Oracle.md#digit-decomposition)
       signconfig:
         base: 2
         nbDigits: 20
@@ -38,9 +47,14 @@ api:
       signconfig:
         base: 2
         nbDigits: 20
+# configuration for the data feed
 datafeed:
   cryptoCompare:
     baseUrl: https://min-api.cryptocompare.com/data
+    # Set your cryptocompare api key here
+    # apiKey: xxxxxxxx
+    # CryptoCompare parameters for each asset. fsym is the cryptocurrency symbol
+    # of interest while tsym is the currency symbol to convert to.
     assetConfigs:
       btcusd:
         fsym: "btc"
