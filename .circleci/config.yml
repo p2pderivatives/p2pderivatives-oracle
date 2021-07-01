@@ -21,7 +21,7 @@ workflows:
     jobs:
       - packaging:
           <<: *tag_only
-          context: github-packages-docker-credentials
+          context: p2pderivatives-ci
       - hold:
           <<: *tag_only
           type: approval
@@ -29,7 +29,7 @@ workflows:
             - packaging
       - deploy:
           <<: *tag_only
-          context: github-packages-docker-credentials
+          context: p2pderivatives-ci
           requires:
             - hold
 
@@ -179,18 +179,18 @@ jobs:
     docker:
       - image: cimg/base:stable
     environment:
-      DOCKER_HUB_URL: docker.pkg.github.com
+      DOCKER_HUB_URL: ghcr.io
       CD_STACK_NAME: oracle-staging
       CD_SERVICE_ADDRESS: https://oracle.p2pderivatives.io/asset
     steps:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "28:6e:e8:c6:7f:02:01:12:7c:3f:f4:6e:a7:42:3f:77"
+            - "69:26:94:63:c5:34:dc:a8:88:e7:c0:cd:9c:61:58:c1"
       - run:
           name: Login to docker repository
           command: |
-            echo "$DOCKER_HUB_PASS" | docker login ${DOCKER_HUB_URL} -u "$DOCKER_HUB_USER" --password-stdin
+            echo "$PACKAGE_DEPLOY" | docker login ${DOCKER_HUB_URL} -u "$PACKAGE_DEPLOY_USER" --password-stdin
       - run:
           name: Setup remote docker context
           command: |

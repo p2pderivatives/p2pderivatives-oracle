@@ -3,7 +3,7 @@
 version: "3.5"
 services:
   oracle:
-    image: docker.pkg.github.com/p2pderivatives/p2pderivatives-oracle/oracle:${IMAGE_TAG:?}
+    image: ghcr.io/p2pderivatives/oracle:${IMAGE_TAG:?}
     labels:
       - image.version:${IMAGE_TAG:?}
       - "traefik.http.routers.oracle.tls=true"
