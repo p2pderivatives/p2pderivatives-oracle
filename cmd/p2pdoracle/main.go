@@ -20,6 +20,7 @@ import (
 	"github.com/cryptogarageinc/server-common-go/pkg/database/orm"
 	"github.com/cryptogarageinc/server-common-go/pkg/log"
 	"github.com/cryptogarageinc/server-common-go/pkg/rest/router"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -189,7 +190,7 @@ func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 	if err != nil {
 		ccFeedConfig := &cryptocompare.Config{}
 		datafeedConfig.InitializeComponentConfig(ccFeedConfig)
-		cryptoCompareClient := cryptocompare.NewClient(ccFeedConfig)
+		cryptoCompareClient := cryptocompare.NewClient(l, ccFeedConfig)
 		cryptoCompareClient.Initialize()
 		feedInstance = cryptoCompareClient
 	} else {
@@ -207,7 +208,16 @@ func NewDefaultOracleAPI(l *log.Log, config *conf.Configuration) router.API {
 func doMigration(o *orm.ORM) error {
 	db := o.GetDB()
 	err := db.AutoMigrate(&entity.Asset{}, &entity.EventData{})
-	err = db.Create(&entity.Asset{AssetID: "btcusd", Description: "BTC USD"}).Error
-	err = db.Create(&entity.Asset{AssetID: "btcjpy", Description: "BTC JPY"}).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.Clauses(clause.OnConflict{DoNothing: true}).Create(&entity.Asset{AssetID: "btcusd", Description: "BTC USD"}).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.Clauses(clause.OnConflict{DoNothing: true}).Create(&entity.Asset{AssetID: "btcjpy", Description: "BTC JPY"}).Error
+
 	return err
 }
