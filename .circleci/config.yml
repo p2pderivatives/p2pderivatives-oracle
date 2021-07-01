@@ -41,8 +41,7 @@ jobs:
       - image: cimg/go:1.14
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Setup generated files
           command: |
@@ -65,8 +64,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Run unit-tests
           command: |
@@ -100,8 +98,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Setup configuration and volumes
           command: |
@@ -160,8 +157,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
+      - setup_remote_docker
       - run:
           name: Login to docker repository
           command: |
