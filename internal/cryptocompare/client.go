@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cryptogarageinc/server-common-go/pkg/log"
+
 	"github.com/pkg/errors"
 
 	"github.com/go-resty/resty/v2"
@@ -19,10 +21,11 @@ const (
 )
 
 // NewClient returns a new CryptoCompare Client (not initialized)
-func NewClient(config *Config) *Client {
+func NewClient(l *log.Log, config *Config) *Client {
 	return &Client{
 		config:      config,
 		initialized: false,
+		log:         l,
 	}
 }
 
@@ -46,6 +49,7 @@ type Client struct {
 	config      *Config
 	httpClient  *resty.Client
 	initialized bool
+	log         *log.Log
 }
 
 // Initialize initializes the http client
@@ -70,18 +74,18 @@ func (c *Client) FindCurrentAssetPrice(assetID string) (*float64, error) {
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Could not find config for asset %v", assetID))
 	}
-	route := fmt.Sprintf(priceRoute+"?fsym=%s&tsyms=%s", assetConfig.fsym, assetConfig.tsyms)
+	route := fmt.Sprintf(priceRoute+"?fsym=%s&tsyms=%s", assetConfig.Fsym, assetConfig.Tsym)
 	resp, err := c.getAssetPrice(route, apiPriceResponse{})
 	if err != nil {
 		return nil, err
 	}
 
 	res := *(resp.Result().(*apiPriceResponse))
-	val, ok := res[strings.ToUpper(assetConfig.tsyms)]
+	val, ok := res[strings.ToUpper(assetConfig.Tsym)]
 
 	// it should not happened if the request was well formed
 	if !ok {
-		return nil, errors.Errorf("error currency %s not found in cryptocompare response", assetConfig.tsyms)
+		return nil, errors.Errorf("error currency %s not found in cryptocompare response", assetConfig.Tsym)
 	}
 
 	return &val, nil
@@ -106,8 +110,8 @@ func (c *Client) FindPastAssetPrice(assetID string, date time.Time) (*float64, e
 	}
 	route := fmt.Sprintf(
 		precisionRoute+"?fsym=%s&tsym=%s&toTs=%d&limit=%d",
-		assetConfig.fsym,
-		assetConfig.tsyms,
+		assetConfig.Fsym,
+		assetConfig.Tsym,
 		date.Unix(),
 		limitPastResponse)
 	resp, err := c.getAssetPrice(route, apiPastPriceResponse{})
@@ -119,6 +123,7 @@ func (c *Client) FindPastAssetPrice(assetID string, date time.Time) (*float64, e
 
 	// should not happen
 	if len(res.Data.Data) != limitPastResponse+1 {
+		c.log.Logger.Errorln("Unexpected data for route ", route, "got response ", resp)
 		return nil, errors.New("cryptocompare response did not contain the requested element")
 	}
 

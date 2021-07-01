@@ -39,7 +39,7 @@ api:
       signconfig:
         base: 2
         nbDigits: 20
-# to use avoid using cryptocompare
+# to avoid using cryptocompare
 # use :
 # datafeed:
 #   dummy:
@@ -47,7 +47,7 @@ api:
 datafeed:
   cryptoCompare:
     baseUrl: https://min-api.cryptocompare.com/data
-    assetConfigs:
+    assetsConfig:
       btcusd:
         fsym: "btc"
         tsym: "usd"

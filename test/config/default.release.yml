@@ -55,7 +55,7 @@ datafeed:
     # apiKey: xxxxxxxx
     # CryptoCompare parameters for each asset. fsym is the cryptocurrency symbol
     # of interest while tsym is the currency symbol to convert to.
-    assetConfigs:
+    assetsConfig:
       btcusd:
         fsym: "btc"
         tsym: "usd"
