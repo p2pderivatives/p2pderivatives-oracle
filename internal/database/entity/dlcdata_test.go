@@ -33,7 +33,9 @@ func Test_CreateDLCData_NotPresent_ReturnsCorrectValue(t *testing.T) {
 		expected.PublishedDate,
 		expected.Kvalues,
 		expected.Nonces,
-		2)
+		2,
+		"e7d5da6e6193a8161437a860d41efe8af7c4c9073a1e75913e663ad59c092b0e0263942a600984f3352de5d089e4769b9448f63f279559408d3e3b089ddbdbc0",
+	)
 
 	// assert
 	assertSub := assert.New(t)
@@ -46,7 +48,7 @@ func Test_CreateDLCData_Present_ReturnsError(t *testing.T) {
 	now := time.Now().UTC()
 	inDB := &entity.EventData{AssetID: "test", PublishedDate: now, Kvalues: []string{"kvalue1"}, Nonces: []string{"rvalue2"}}
 	db.Create(inDB)
-	_, err := entity.CreateEventData(db, inDB.AssetID, inDB.PublishedDate, inDB.Kvalues, inDB.Nonces, 2)
+	_, err := entity.CreateEventData(db, inDB.AssetID, inDB.PublishedDate, inDB.Kvalues, inDB.Nonces, 2, "e7d5da6e6193a8161437a860d41efe8af7c4c9073a1e75913e663ad59c092b0e0263942a600984f3352de5d089e4769b9448f63f279559408d3e3b089ddbdbc0")
 	assert.Error(t, err)
 }
 
