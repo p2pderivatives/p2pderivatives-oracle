@@ -200,16 +200,16 @@ func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB
 					rValues[i] = rvalue.EncodeToString()
 					rValuesRaw[i] = *rvalue
 				}
+				eventID := entity.ComputeEventEventID(assetID, &publishDate)
+				eventSignature, err := dlccrypto.GenerateEventSignature(oracleInstance.PrivateKey, rValuesRaw, uint32(publishDate.Unix()), uint16(ct.config.SignConfig.Base), ct.config.SignConfig.IsSigned, ct.config.Unit, int32(ct.config.SignConfig.Precision), uint16(ct.config.SignConfig.NbDigits), eventID, cryptoService)
 				dlcData, err = entity.CreateEventData(
 					db,
 					assetID,
 					publishDate,
 					kValues,
 					rValues,
-					ct.config.SignConfig.Base)
-
-				eventSignature, err := dlccrypto.GenerateEventSignature(oracleInstance.PrivateKey, rValuesRaw, uint32(publishDate.Unix()), uint16(ct.config.SignConfig.Base), ct.config.SignConfig.IsSigned, ct.config.Unit, int32(ct.config.SignConfig.Precision), uint16(ct.config.SignConfig.NbDigits), dlcData.GetEventID(), cryptoService)
-				dlcData.AnnouncementSignature = eventSignature
+					ct.config.SignConfig.Base,
+					eventSignature)
 				if err != nil {
 					return nil, NewUnknownDBError(err)
 				}

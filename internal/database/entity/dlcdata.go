@@ -33,7 +33,12 @@ type EventData struct {
 
 // GetEventID returns the event ID for the given eventData structure
 func (eventData *EventData) GetEventID() string {
-	return eventData.AssetID + strconv.FormatInt(eventData.PublishedDate.Unix(), 10)
+	return ComputeEventEventID(eventData.AssetID, &eventData.PublishedDate)
+}
+
+// ComputeEventID computes the event ID from the given parameters
+func ComputeEventEventID(assetID string, publishedDate *time.Time) string {
+	return assetID + strconv.FormatInt(publishedDate.Unix(), 10)
 }
 
 // StringArray is an alias type for an array of strings
@@ -71,15 +76,16 @@ func (eventData *EventData) HasSignature() bool {
 
 // CreateEventData will try to create a DLCData with a new Rvalue corresponding to an asset and publishDate
 // if already in db, it will return the value found with no error
-func CreateEventData(db *gorm.DB, assetID string, publishDate time.Time, signingks []string, rvalues []string, base int) (*EventData, error) {
+func CreateEventData(db *gorm.DB, assetID string, publishDate time.Time, signingks []string, rvalues []string, base int, announcementSignature string) (*EventData, error) {
 	tx := db.Begin()
 
 	newDLCData := &EventData{
-		PublishedDate: publishDate,
-		AssetID:       assetID,
-		Kvalues:       signingks,
-		Nonces:        rvalues,
-		Base:          base,
+		PublishedDate:         publishDate,
+		AssetID:               assetID,
+		Kvalues:               signingks,
+		Nonces:                rvalues,
+		Base:                  base,
+		AnnouncementSignature: announcementSignature,
 	}
 
 	tx = tx.Create(newDLCData)

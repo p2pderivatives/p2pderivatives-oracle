@@ -218,7 +218,7 @@ func TestAssetController_GetAssetAnnouncement_WithNearValidDateInDB_ReturnsCorre
 
 func TestAssetController_GetAssetAnnouncement_NotInDB_ReturnsCorrectValue(t *testing.T) {
 	// parameters
-	date := InDbDLCData.PublishedDate.Add(30 * time.Minute)
+	date := InDbDLCData.PublishedDate.Add((30 * time.Minute) + (2 * time.Second))
 	oracleService, err := NewTestOracleService()
 	if err != nil {
 		t.Error(err)
