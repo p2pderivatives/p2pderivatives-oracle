@@ -17,10 +17,10 @@ func NewOracleAnnouncement(
 		Precision: eventData.Precision,
 	}
 	event := OracleEvent{
-		Nonces:          eventData.Nonces,
-		EventMaturity:   eventData.PublishedDate,
-		EventDescriptor: descriptor,
-		EventID:         eventData.GetEventID(),
+		Nonces:             eventData.Nonces,
+		EventMaturityEpoch: eventData.PublishedDate,
+		EventDescriptor:    descriptor,
+		EventID:            eventData.GetEventID(),
 	}
 	announcement := OracleAnnouncement{
 		AnnouncementSignature: eventData.AnnouncementSignature,
@@ -51,10 +51,10 @@ type DecompositionDescriptor struct {
 
 // OracleEvent contains information about an event
 type OracleEvent struct {
-	Nonces          []string                `json:"nonces"`
-	EventMaturity   time.Time               `json:"eventMaturity"`
-	EventDescriptor DecompositionDescriptor `json:"eventDescriptor"`
-	EventID         string                  `json:"eventId"`
+	Nonces             []string                `json:"nonces"`
+	EventMaturityEpoch time.Time               `json:"eventMaturity"`
+	EventDescriptor    DecompositionDescriptor `json:"eventDescriptor"`
+	EventID            string                  `json:"eventId"`
 }
 
 // OracleAnnouncement contains information about an event and a signature over

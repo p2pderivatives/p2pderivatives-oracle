@@ -98,7 +98,7 @@ func Test_SignAndVerify(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		msg := RandString(10)
 		kvalue, _, _ := crypto.GenerateSchnorrKeyPair()
-		sig, err := crypto.ComputeSchnorrSignature(privkey, kvalue, msg)
+		sig, err := crypto.ComputeSchnorrSignatureFixedK(privkey, kvalue, msg)
 		assert.NoError(t, err)
 		valid, err := crypto.VerifySchnorrSignature(pubkey, sig, msg)
 		assert.NoError(t, err)
@@ -113,7 +113,7 @@ func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
 	for _, sigpair := range TestSignature {
 		kvalue, err := dlccrypto.NewPrivateKey(sigpair.krPair.k)
 		assert.NoError(t, err)
-		sig, err := crypto.ComputeSchnorrSignature(oracleKey, kvalue, sigpair.message)
+		sig, err := crypto.ComputeSchnorrSignatureFixedK(oracleKey, kvalue, sigpair.message)
 		assert.NoError(t, err)
 		assert.Equal(t, sigpair.signature, sig.EncodeToString())
 	}

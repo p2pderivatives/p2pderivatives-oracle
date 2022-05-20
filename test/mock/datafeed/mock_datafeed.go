@@ -5,35 +5,36 @@
 package mock_datafeed
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockDataFeed is a mock of DataFeed interface
+// MockDataFeed is a mock of DataFeed interface.
 type MockDataFeed struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataFeedMockRecorder
 }
 
-// MockDataFeedMockRecorder is the mock recorder for MockDataFeed
+// MockDataFeedMockRecorder is the mock recorder for MockDataFeed.
 type MockDataFeedMockRecorder struct {
 	mock *MockDataFeed
 }
 
-// NewMockDataFeed creates a new mock instance
+// NewMockDataFeed creates a new mock instance.
 func NewMockDataFeed(ctrl *gomock.Controller) *MockDataFeed {
 	mock := &MockDataFeed{ctrl: ctrl}
 	mock.recorder = &MockDataFeedMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataFeed) EXPECT() *MockDataFeedMockRecorder {
 	return m.recorder
 }
 
-// FindCurrentAssetPrice mocks base method
+// FindCurrentAssetPrice mocks base method.
 func (m *MockDataFeed) FindCurrentAssetPrice(assetID string) (*float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindCurrentAssetPrice", assetID)
@@ -42,13 +43,13 @@ func (m *MockDataFeed) FindCurrentAssetPrice(assetID string) (*float64, error) {
 	return ret0, ret1
 }
 
-// FindCurrentAssetPrice indicates an expected call of FindCurrentAssetPrice
+// FindCurrentAssetPrice indicates an expected call of FindCurrentAssetPrice.
 func (mr *MockDataFeedMockRecorder) FindCurrentAssetPrice(assetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindCurrentAssetPrice", reflect.TypeOf((*MockDataFeed)(nil).FindCurrentAssetPrice), assetID)
 }
 
-// FindPastAssetPrice mocks base method
+// FindPastAssetPrice mocks base method.
 func (m *MockDataFeed) FindPastAssetPrice(assetID string, date time.Time) (*float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindPastAssetPrice", assetID, date)
@@ -57,36 +58,36 @@ func (m *MockDataFeed) FindPastAssetPrice(assetID string, date time.Time) (*floa
 	return ret0, ret1
 }
 
-// FindPastAssetPrice indicates an expected call of FindPastAssetPrice
+// FindPastAssetPrice indicates an expected call of FindPastAssetPrice.
 func (mr *MockDataFeedMockRecorder) FindPastAssetPrice(assetID, date interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPastAssetPrice", reflect.TypeOf((*MockDataFeed)(nil).FindPastAssetPrice), assetID, date)
 }
 
-// MockAssetPriceFeed is a mock of AssetPriceFeed interface
+// MockAssetPriceFeed is a mock of AssetPriceFeed interface.
 type MockAssetPriceFeed struct {
 	ctrl     *gomock.Controller
 	recorder *MockAssetPriceFeedMockRecorder
 }
 
-// MockAssetPriceFeedMockRecorder is the mock recorder for MockAssetPriceFeed
+// MockAssetPriceFeedMockRecorder is the mock recorder for MockAssetPriceFeed.
 type MockAssetPriceFeedMockRecorder struct {
 	mock *MockAssetPriceFeed
 }
 
-// NewMockAssetPriceFeed creates a new mock instance
+// NewMockAssetPriceFeed creates a new mock instance.
 func NewMockAssetPriceFeed(ctrl *gomock.Controller) *MockAssetPriceFeed {
 	mock := &MockAssetPriceFeed{ctrl: ctrl}
 	mock.recorder = &MockAssetPriceFeedMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAssetPriceFeed) EXPECT() *MockAssetPriceFeedMockRecorder {
 	return m.recorder
 }
 
-// FindCurrentAssetPrice mocks base method
+// FindCurrentAssetPrice mocks base method.
 func (m *MockAssetPriceFeed) FindCurrentAssetPrice(assetID string) (*float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindCurrentAssetPrice", assetID)
@@ -95,13 +96,13 @@ func (m *MockAssetPriceFeed) FindCurrentAssetPrice(assetID string) (*float64, er
 	return ret0, ret1
 }
 
-// FindCurrentAssetPrice indicates an expected call of FindCurrentAssetPrice
+// FindCurrentAssetPrice indicates an expected call of FindCurrentAssetPrice.
 func (mr *MockAssetPriceFeedMockRecorder) FindCurrentAssetPrice(assetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindCurrentAssetPrice", reflect.TypeOf((*MockAssetPriceFeed)(nil).FindCurrentAssetPrice), assetID)
 }
 
-// FindPastAssetPrice mocks base method
+// FindPastAssetPrice mocks base method.
 func (m *MockAssetPriceFeed) FindPastAssetPrice(assetID string, date time.Time) (*float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindPastAssetPrice", assetID, date)
@@ -110,7 +111,7 @@ func (m *MockAssetPriceFeed) FindPastAssetPrice(assetID string, date time.Time) 
 	return ret0, ret1
 }
 
-// FindPastAssetPrice indicates an expected call of FindPastAssetPrice
+// FindPastAssetPrice indicates an expected call of FindPastAssetPrice.
 func (mr *MockAssetPriceFeedMockRecorder) FindPastAssetPrice(assetID, date interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPastAssetPrice", reflect.TypeOf((*MockAssetPriceFeed)(nil).FindPastAssetPrice), assetID, date)

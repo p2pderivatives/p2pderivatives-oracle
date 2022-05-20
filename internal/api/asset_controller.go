@@ -84,7 +84,7 @@ func (ct *AssetController) GetAssetAnnouncement(c *gin.Context) {
 	oracleInstance := c.MustGet(ContextIDOracle).(*oracle.Oracle)
 	db := c.MustGet(ContextIDOrm).(*orm.ORM).GetDB()
 	crypto := c.MustGet(ContextIDCryptoService).(dlccrypto.CryptoService)
-	dlcData, err := ct.findOrCreateDLCData(logger, db, crypto, ct.assetID, *publishDate, ct.config)
+	dlcData, err := ct.findOrCreateDLCData(logger, db, crypto, ct.assetID, *publishDate, ct.config, oracleInstance)
 	if err != nil {
 		c.Error(err)
 		return
@@ -117,7 +117,8 @@ func (ct *AssetController) GetAssetAttestation(c *gin.Context) {
 
 	db := c.MustGet(ContextIDOrm).(*orm.ORM).GetDB()
 	crypto := c.MustGet(ContextIDCryptoService).(dlccrypto.CryptoService)
-	dlcData, err := ct.findOrCreateDLCData(logger, db, crypto, ct.assetID, *publishDate, ct.config)
+	oracleInstance := c.MustGet(ContextIDOracle).(*oracle.Oracle)
+	dlcData, err := ct.findOrCreateDLCData(logger, db, crypto, ct.assetID, *publishDate, ct.config, oracleInstance)
 	if err != nil {
 		c.Error(err)
 		return
@@ -167,7 +168,7 @@ func (ct *AssetController) GetAssetAttestation(c *gin.Context) {
 	c.JSON(http.StatusOK, NewOracleAttestation(dlcData))
 }
 
-func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, oracle dlccrypto.CryptoService, assetID string, publishDate time.Time, config AssetConfig) (*entity.EventData, error) {
+func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB, cryptoService dlccrypto.CryptoService, assetID string, publishDate time.Time, config AssetConfig, oracleInstance *oracle.Oracle) (*entity.EventData, error) {
 	dlcData, err := entity.FindDLCDataPublishedAt(db, assetID, publishDate)
 	if err == nil {
 		logger.Debug("Found a matching DLC Data in db")
@@ -189,13 +190,15 @@ func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB
 				logger.Debug("Generating new DLC data Rvalue")
 				kValues := make([]string, config.SignConfig.NbDigits)
 				rValues := make([]string, config.SignConfig.NbDigits)
+				rValuesRaw := make([]dlccrypto.SchnorrPublicKey, config.SignConfig.NbDigits)
 				for i := 0; i < config.SignConfig.NbDigits; i++ {
-					signingK, rvalue, err := oracle.GenerateSchnorrKeyPair()
+					signingK, rvalue, err := cryptoService.GenerateSchnorrKeyPair()
 					if err != nil {
 						return nil, NewUnknownCryptoServiceError(err)
 					}
 					kValues[i] = signingK.EncodeToString()
 					rValues[i] = rvalue.EncodeToString()
+					rValuesRaw[i] = *rvalue
 				}
 				dlcData, err = entity.CreateEventData(
 					db,
@@ -204,6 +207,9 @@ func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB
 					kValues,
 					rValues,
 					ct.config.SignConfig.Base)
+
+				eventSignature, err := dlccrypto.GenerateEventSignature(oracleInstance.PrivateKey, rValuesRaw, uint32(publishDate.Unix()), uint16(ct.config.SignConfig.Base), ct.config.SignConfig.IsSigned, ct.config.Unit, int32(ct.config.SignConfig.Precision), uint16(ct.config.SignConfig.NbDigits), dlcData.GetEventID(), cryptoService)
+				dlcData.AnnouncementSignature = eventSignature
 				if err != nil {
 					return nil, NewUnknownDBError(err)
 				}

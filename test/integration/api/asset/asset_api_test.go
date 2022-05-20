@@ -122,7 +122,7 @@ func TestGetAssetAnnouncement_WithValidTime_ReturnsCorrectValue(t *testing.T) {
 			actual := resp.Result().(*api.OracleAnnouncement)
 
 			assertSub.Equal(config.SignConfig.Base, actual.OracleEvent.EventDescriptor.Base)
-			assertPublishedDate(assertSub, requestedDate, actual.OracleEvent.EventMaturity, config.Frequency)
+			assertPublishedDate(assertSub, requestedDate, actual.OracleEvent.EventMaturityEpoch, config.Frequency)
 			for _, rValue := range actual.OracleEvent.Nonces {
 				_, err = dlccrypto.NewSchnorrPublicKey(rValue)
 				assertSub.NoError(err)
