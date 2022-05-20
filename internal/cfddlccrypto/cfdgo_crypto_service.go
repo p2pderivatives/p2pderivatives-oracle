@@ -2,6 +2,7 @@ package cfddlccrypto
 
 import (
 	"crypto/sha256"
+	"math/rand"
 	"p2pderivatives-oracle/internal/dlccrypto"
 
 	cfdgo "github.com/cryptogarageinc/cfd-go"
@@ -54,12 +55,31 @@ func (o *CfdgoCryptoService) SchnorrPublicKeyFromPrivateKey(privateKey *dlccrypt
 }
 
 // ComputeSchnorrSignature computes a schnorr signature on the given message (will be hashed by sha256)
-func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *dlccrypto.PrivateKey, kvalue *dlccrypto.PrivateKey, message string) (*dlccrypto.Signature, error) {
+func (o *CfdgoCryptoService) ComputeSchnorrSignatureFixedK(privateKey *dlccrypto.PrivateKey, kvalue *dlccrypto.PrivateKey, message string) (*dlccrypto.Signature, error) {
 	hash := sha256.Sum256([]byte(message))
 
 	bs, err := o.schnorrUtil.SignWithNonce(cfdgo.NewByteData(hash[:]),
 		*cfdgo.NewByteDataFromHexIgnoreError(privateKey.EncodeToString()),
 		*cfdgo.NewByteDataFromHexIgnoreError(kvalue.EncodeToString()))
+	if err != nil {
+		return nil, errors.WithMessage(err, "Error while computing schnorr signature")
+	}
+	sig, err := dlccrypto.NewSignature(bs.ToHex())
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
+}
+
+// ComputeSchnorrSignature computes a schnorr signature on the given byte buffer message (will be hashed by sha256)
+func (o *CfdgoCryptoService) ComputeSchnorrSignature(privateKey *dlccrypto.PrivateKey, message []byte) (*dlccrypto.Signature, error) {
+	hash := sha256.Sum256(message)
+
+	auxRand := make([]byte, 32)
+	rand.Read(auxRand)
+
+	bs, err := o.schnorrUtil.Sign(cfdgo.NewByteData(hash[:]),
+		*cfdgo.NewByteDataFromHexIgnoreError(privateKey.EncodeToString()), cfdgo.NewByteData(auxRand))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error while computing schnorr signature")
 	}

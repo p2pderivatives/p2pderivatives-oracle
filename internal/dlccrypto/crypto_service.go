@@ -4,6 +4,7 @@ package dlccrypto
 type CryptoService interface {
 	GenerateSchnorrKeyPair() (*PrivateKey, *SchnorrPublicKey, error)
 	SchnorrPublicKeyFromPrivateKey(privateKey *PrivateKey) (*SchnorrPublicKey, error)
-	ComputeSchnorrSignature(privateKey *PrivateKey, oneTimeSigningK *PrivateKey, message string) (*Signature, error)
+	ComputeSchnorrSignatureFixedK(privateKey *PrivateKey, oneTimeSigningK *PrivateKey, message string) (*Signature, error)
+	ComputeSchnorrSignature(privateKey *PrivateKey, message []byte) (*Signature, error)
 	VerifySchnorrSignature(publicKey *SchnorrPublicKey, signature *Signature, message string) (bool, error)
 }

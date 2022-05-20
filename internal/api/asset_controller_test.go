@@ -3,6 +3,7 @@ package api_test
 import (
 	"encoding/json"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"p2pderivatives-oracle/internal/api"
@@ -50,11 +51,12 @@ var InDbDLCData = &entity.EventData{
 }
 
 type ResponseValue struct {
-	AssetID    string
-	Rvalues    []string
-	Kvalues    []string
-	Values     []string
-	Signatures []string
+	AssetID               string
+	Rvalues               []string
+	Kvalues               []string
+	Values                []string
+	Signatures            []string
+	AnnouncementSignature string
 }
 
 const datafeedValue = 100.06
@@ -69,9 +71,11 @@ var TestResponseValues = &ResponseValue{
 		"5b0210b2f4ece4c0fabf400dc4bbaa2bacf44542812b7e8dabd1c8f1501f3622101a0502ef8e71d0c5ebf403b87dd152076f2cbd4d380fff768911c50a396e7a",
 		"2bf59128d9302d7a668fafd4d1511232dc991665973567ecd5156ec02f81d9a80772068d6faa2a026e722b367d48027dc1ad8a010d359afe11f9092cb252d017",
 	},
+	AnnouncementSignature: "246869c18a3f07f767cbc61f326d4447a2ee052430f87ec8fa659435849aecc10ef8afe468459a687d65992d819c19314f42cdf35ee4411d1408ae3559e02241",
 }
 
 func SetupMockValues() ([]*dlccrypto.PrivateKey, []*dlccrypto.SchnorrPublicKey, []*dlccrypto.Signature, *float64, error) {
+	rand.Seed(1)
 	nb := len(TestResponseValues.Kvalues)
 	kvalues := make([]*dlccrypto.PrivateKey, nb)
 	rvalues := make([]*dlccrypto.SchnorrPublicKey, nb)
@@ -227,7 +231,7 @@ func TestAssetController_GetAssetAnnouncement_NotInDB_ReturnsCorrectValue(t *tes
 		AssetID:               InDbDLCData.AssetID,
 		Nonces:                TestResponseValues.Rvalues,
 		Asset:                 InDbDLCData.Asset,
-		AnnouncementSignature: InDbDLCData.AnnouncementSignature,
+		AnnouncementSignature: TestResponseValues.AnnouncementSignature,
 		Base:                  InDbDLCData.Base,
 		Precision:             InDbDLCData.Precision,
 	}
@@ -244,6 +248,9 @@ func TestAssetController_GetAssetAnnouncement_NotInDB_ReturnsCorrectValue(t *tes
 	for i := 0; i < len(kvalue); i++ {
 		crypto.EXPECT().GenerateSchnorrKeyPair().Return(kvalue[i], rvalue[i], nil)
 	}
+
+	expectedSig, _ := dlccrypto.NewSignature(TestResponseValues.AnnouncementSignature)
+	crypto.EXPECT().ComputeSchnorrSignature(oracleService.PrivateKey, gomock.Any()).Return(expectedSig, nil)
 
 	resp := httptest.NewRecorder()
 	c, r := SetupAssetEngine(resp, oracleService, crypto, nil)
@@ -275,7 +282,7 @@ func TestAssetController_GetAssetAttestation_NotInDB_ReturnsCorrectValue(t *test
 		Signatures:            TestResponseValues.Signatures,
 		Values:                TestResponseValues.Values,
 		Asset:                 InDbDLCData.Asset,
-		AnnouncementSignature: InDbDLCData.AnnouncementSignature,
+		AnnouncementSignature: TestResponseValues.AnnouncementSignature,
 	}
 	expected := api.NewOracleAttestation(updatedDlcData)
 
@@ -294,11 +301,14 @@ func TestAssetController_GetAssetAttestation_NotInDB_ReturnsCorrectValue(t *test
 		crypto := mock_dlccrypto.NewMockCryptoService(ctrl)
 		for i := 0; i < len(kvalues); i++ {
 			crypto.EXPECT().GenerateSchnorrKeyPair().Return(kvalues[i], rvalues[i], nil)
-			crypto.EXPECT().ComputeSchnorrSignature(
+			crypto.EXPECT().ComputeSchnorrSignatureFixedK(
 				oracleInstance.PrivateKey,
 				kvalues[i],
 				TestResponseValues.Values[i]).Return(sigs[i], nil)
 		}
+
+		expectedSig, _ := dlccrypto.NewSignature(TestResponseValues.AnnouncementSignature)
+		crypto.EXPECT().ComputeSchnorrSignature(oracleInstance.PrivateKey, gomock.Any()).Return(expectedSig, nil)
 
 		resp := httptest.NewRecorder()
 		c, r := SetupAssetEngine(resp, oracleInstance, crypto, feed)
