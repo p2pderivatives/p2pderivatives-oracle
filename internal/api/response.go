@@ -11,14 +11,17 @@ func NewOracleAnnouncement(
 	oraclePubKey *dlccrypto.SchnorrPublicKey,
 	eventData *entity.EventData) *OracleAnnouncement {
 	descriptor := DecompositionDescriptor{
-		Base:      eventData.Base,
-		IsSigned:  eventData.IsSigned,
-		Unit:      eventData.Unit,
-		Precision: eventData.Precision,
+		DigitDecompositionDescriptor: DigitDecompositionDescriptor{
+			Base:      eventData.Base,
+			IsSigned:  eventData.IsSigned,
+			Unit:      eventData.Unit,
+			Precision: eventData.Precision,
+			NbDigits:  len(eventData.Nonces),
+		},
 	}
 	event := OracleEvent{
 		Nonces:             eventData.Nonces,
-		EventMaturityEpoch: eventData.PublishedDate,
+		EventMaturityEpoch: eventData.PublishedDate.Unix(),
 		EventDescriptor:    descriptor,
 		EventID:            eventData.GetEventID(),
 	}
@@ -40,19 +43,25 @@ func NewOracleAttestation(eventData *entity.EventData) *OracleAttestation {
 	}
 }
 
-// DecompositionDescriptor contains information to about an event using
-// numerical decomposition
-type DecompositionDescriptor struct {
+// DigitDecompositionDescriptor contains information about a numerical event.
+type DigitDecompositionDescriptor struct {
 	Base      int    `json:"base"`
 	IsSigned  bool   `json:"isSigned"`
 	Unit      string `json:"unit"`
 	Precision int    `json:"precision"`
+	NbDigits  int    `json:"nbDigits"`
+}
+
+// DecompositionDescriptor can contain information about either an enumerable event
+// or a numerical event.
+type DecompositionDescriptor struct {
+	DigitDecompositionDescriptor DigitDecompositionDescriptor `json:"digitDecompositionEvent"`
 }
 
 // OracleEvent contains information about an event
 type OracleEvent struct {
-	Nonces             []string                `json:"nonces"`
-	EventMaturityEpoch time.Time               `json:"eventMaturity"`
+	Nonces             []string                `json:"oracleNonces"`
+	EventMaturityEpoch int64                   `json:"eventMaturityEpoch"`
 	EventDescriptor    DecompositionDescriptor `json:"eventDescriptor"`
 	EventID            string                  `json:"eventId"`
 }
