@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"p2pderivatives-oracle/internal/api"
+	"p2pderivatives-oracle/internal/cfddlccrypto"
 	"p2pderivatives-oracle/internal/database/entity"
 	"p2pderivatives-oracle/internal/datafeed"
 	"p2pderivatives-oracle/internal/decompose"
@@ -38,6 +39,7 @@ var TestAssetConfig = &api.AssetConfig{
 		Base:     10,
 		NbDigits: 3,
 	},
+	Unit: "usd/btc",
 }
 
 var InDbDLCData = &entity.EventData{
@@ -234,6 +236,7 @@ func TestAssetController_GetAssetAnnouncement_NotInDB_ReturnsCorrectValue(t *tes
 		AnnouncementSignature: TestResponseValues.AnnouncementSignature,
 		Base:                  InDbDLCData.Base,
 		Precision:             InDbDLCData.Precision,
+		Unit:                  TestAssetConfig.Unit,
 	}
 
 	expected := api.NewOracleAnnouncement(oracleService.PublicKey, &updatedDlcData)
@@ -388,4 +391,48 @@ func GetRouteWithTimeParam(route string, date time.Time) string {
 		":"+api.URLParamTagTime,
 		date.Format(api.TimeFormatISO8601),
 		1)
+}
+
+func TestAssetController_GetAssetAttestation_HasValidAnnouncementSignature(t *testing.T) {
+	oracleInstance, _ := NewTestOracleService()
+	resp := httptest.NewRecorder()
+	crypto := cfddlccrypto.NewCfdgoCryptoService()
+
+	c, r := SetupAssetEngine(resp, oracleInstance, crypto, nil)
+	route := GetRouteWithTimeParam(api.RouteGETAssetAnnouncement, time.Now().Add(1*time.Hour))
+	c.Request, _ = http.NewRequest(http.MethodGet, route, nil)
+	r.ServeHTTP(resp, c.Request)
+
+	input := resp.Body.String()
+	println(input)
+	var announcement api.OracleAnnouncement
+	err := json.Unmarshal([]byte(input), &announcement)
+	assert.NoError(t, err)
+
+	nonces := make([]dlccrypto.SchnorrPublicKey, 0)
+
+	for _, s := range announcement.OracleEvent.Nonces {
+		k, _ := dlccrypto.NewSchnorrPublicKey(s)
+		nonces = append(nonces, *k)
+	}
+
+	ser := dlccrypto.SerializeEvent(
+		nonces,
+		uint32(announcement.OracleEvent.EventMaturityEpoch),
+		uint16(announcement.OracleEvent.EventDescriptor.DigitDecompositionDescriptor.Base),
+		announcement.OracleEvent.EventDescriptor.DigitDecompositionDescriptor.IsSigned,
+		announcement.OracleEvent.EventDescriptor.DigitDecompositionDescriptor.Unit,
+		int32(announcement.OracleEvent.EventDescriptor.DigitDecompositionDescriptor.Precision),
+		uint16(announcement.OracleEvent.EventDescriptor.DigitDecompositionDescriptor.NbDigits),
+		announcement.OracleEvent.EventID,
+	)
+
+	pubkey, err := dlccrypto.NewSchnorrPublicKey(announcement.OraclePublicKey)
+	assert.NoError(t, err)
+
+	sig, err := dlccrypto.NewSignature(announcement.AnnouncementSignature)
+	assert.NoError(t, err)
+
+	valid, _ := crypto.VerifySchnorrSignatureRaw(pubkey, sig, ser)
+	assert.True(t, valid)
 }

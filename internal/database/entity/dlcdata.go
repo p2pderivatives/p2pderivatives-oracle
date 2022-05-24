@@ -76,7 +76,7 @@ func (eventData *EventData) HasSignature() bool {
 
 // CreateEventData will try to create a DLCData with a new Rvalue corresponding to an asset and publishDate
 // if already in db, it will return the value found with no error
-func CreateEventData(db *gorm.DB, assetID string, publishDate time.Time, signingks []string, rvalues []string, base int, announcementSignature string) (*EventData, error) {
+func CreateEventData(db *gorm.DB, assetID string, publishDate time.Time, signingks []string, rvalues []string, base int, unit string, announcementSignature string) (*EventData, error) {
 	tx := db.Begin()
 
 	newDLCData := &EventData{
@@ -86,6 +86,7 @@ func CreateEventData(db *gorm.DB, assetID string, publishDate time.Time, signing
 		Nonces:                rvalues,
 		Base:                  base,
 		AnnouncementSignature: announcementSignature,
+		Unit:                  unit,
 	}
 
 	tx = tx.Create(newDLCData)

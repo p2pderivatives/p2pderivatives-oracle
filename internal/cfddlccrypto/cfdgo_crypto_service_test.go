@@ -106,7 +106,7 @@ func Test_SignAndVerify(t *testing.T) {
 	}
 }
 
-func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
+func Test_CfdgoCryptoService_ComputeSchnorrSignatureFixedK(t *testing.T) {
 	crypto := cfddlccrypto.NewCfdgoCryptoService()
 	oracleKey, err := dlccrypto.NewPrivateKey(TestOracleKeyPair.PrivateKey)
 	assert.NoError(t, err)
@@ -117,6 +117,20 @@ func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, sigpair.signature, sig.EncodeToString())
 	}
+}
+
+func Test_CfdgoCryptoService_ComputeSchnorrSignature(t *testing.T) {
+	rand.Seed(1)
+	crypto := cfddlccrypto.NewCfdgoCryptoService()
+	message := "hello world"
+	oracleKey, err := dlccrypto.NewPrivateKey(TestOracleKeyPair.PrivateKey)
+	oraclePubKey, err := dlccrypto.NewSchnorrPublicKey(TestOracleKeyPair.PublicKey)
+	assert.NoError(t, err)
+	sig, err := crypto.ComputeSchnorrSignature(oracleKey, []byte(message))
+	assert.NoError(t, err)
+	isValid, err := crypto.VerifySchnorrSignature(oraclePubKey, sig, message)
+	assert.NoError(t, err)
+	assert.True(t, isValid)
 }
 
 func Test_CfdgoCryptoService_VerifySignature(t *testing.T) {

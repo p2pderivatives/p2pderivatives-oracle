@@ -99,3 +99,13 @@ func (o *CfdgoCryptoService) VerifySchnorrSignature(publicKey *dlccrypto.Schnorr
 	}
 	return ok, nil
 }
+
+// VerifySchnorrSignature verifies the schnorr signature against a given public key on the given message (will be hashed with sha256)
+func (o *CfdgoCryptoService) VerifySchnorrSignatureRaw(publicKey *dlccrypto.SchnorrPublicKey, signature *dlccrypto.Signature, message []byte) (bool, error) {
+	hash := sha256.Sum256(message)
+	ok, err := o.schnorrUtil.Verify(*cfdgo.NewByteDataFromHexIgnoreError(signature.EncodeToString()), cfdgo.NewByteData(hash[:]), *cfdgo.NewByteDataFromHexIgnoreError(publicKey.EncodeToString()))
+	if err != nil {
+		return false, errors.WithMessage(err, "Error while verifying schnorr signature")
+	}
+	return ok, nil
+}

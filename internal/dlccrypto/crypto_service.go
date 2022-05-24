@@ -7,4 +7,5 @@ type CryptoService interface {
 	ComputeSchnorrSignatureFixedK(privateKey *PrivateKey, oneTimeSigningK *PrivateKey, message string) (*Signature, error)
 	ComputeSchnorrSignature(privateKey *PrivateKey, message []byte) (*Signature, error)
 	VerifySchnorrSignature(publicKey *SchnorrPublicKey, signature *Signature, message string) (bool, error)
+	VerifySchnorrSignatureRaw(publicKey *SchnorrPublicKey, signature *Signature, message []byte) (bool, error)
 }

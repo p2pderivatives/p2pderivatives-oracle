@@ -209,6 +209,7 @@ func (ct *AssetController) findOrCreateDLCData(logger *logrus.Entry, db *gorm.DB
 					kValues,
 					rValues,
 					ct.config.SignConfig.Base,
+					ct.config.Unit,
 					eventSignature)
 				if err != nil {
 					return nil, NewUnknownDBError(err)
