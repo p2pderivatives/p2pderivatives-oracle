@@ -109,3 +109,18 @@ func (mr *MockCryptoServiceMockRecorder) VerifySchnorrSignature(publicKey, signa
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySchnorrSignature", reflect.TypeOf((*MockCryptoService)(nil).VerifySchnorrSignature), publicKey, signature, message)
 }
+
+// VerifySchnorrSignatureRaw mocks base method.
+func (m *MockCryptoService) VerifySchnorrSignatureRaw(publicKey *dlccrypto.SchnorrPublicKey, signature *dlccrypto.Signature, message []byte) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifySchnorrSignatureRaw", publicKey, signature, message)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifySchnorrSignatureRaw indicates an expected call of VerifySchnorrSignatureRaw.
+func (mr *MockCryptoServiceMockRecorder) VerifySchnorrSignatureRaw(publicKey, signature, message interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySchnorrSignatureRaw", reflect.TypeOf((*MockCryptoService)(nil).VerifySchnorrSignatureRaw), publicKey, signature, message)
+}
