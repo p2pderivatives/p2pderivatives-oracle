@@ -1,0 +1,55 @@
+ARG ARG_CFD_GO_VERSION=0.4.3
+ARG CFD_GO_ZIP=cfdgo-v${ARG_CFD_GO_VERSION}-alpine-3.16-x86_64.zip
+FROM golang:1.19-alpine3.16 as dev
+RUN apk update
+RUN apk add make cmake gcc g++ libc-dev git unzip
+ENV GO111MODULE=on
+
+WORKDIR /p2pderivatives-oracle
+
+# install cfd-go dependencies
+ENV LD_LIBRARY_PATH=/usr/local/lib64
+ARG ARG_CFD_GO_VERSION
+ARG CFD_GO_ZIP
+ENV CFDGO_VERSION=v${ARG_CFD_GO_VERSION}
+
+RUN apk update && apk add --no-cache alpine-sdk git cmake
+
+WORKDIR /workspace
+RUN git clone https://github.com/cryptogarageinc/cfd-go -b $CFDGO_VERSION --depth 1 \
+    && cd cfd-go \
+    && ./tools/shared_simple_build.sh \
+    && go build && ./go_test.sh && go clean -testcache \
+    && cd build && make install && cd .. \
+    && cd .. && rm -rf cfd-go
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY tools tools/
+COPY Makefile .
+
+RUN make install-tools
+
+COPY . .
+
+RUN go build -o /p2pdoracle/oracle ./cmd/p2pdoracle/main.go
+
+WORKDIR /p2pdoracle
+
+# runtime dependencies
+RUN apk update
+RUN apk add libstdc++
+##look for shared librairies here
+ENV LD_LIBRARY_PATH=/usr/local/lib64
+
+RUN mkdir -p /config
+COPY ./test/config/default.release.yml /config/default.yml
+VOLUME [ "/config" ]
+RUN mkdir -p /key
+VOLUME ["/key"]
+
+ENTRYPOINT [ "/p2pdoracle/oracle" ]
+CMD [ "-config", "/config", "-appname", "p2pdoracle", "-e", "default", "-migrate" ]
